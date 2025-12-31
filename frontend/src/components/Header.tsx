@@ -6,6 +6,7 @@ import { useRouter } from 'expo-router';
 import { useTheme } from '../hooks/useTheme';
 import { useTranslation } from '../hooks/useTranslation';
 import { useAppStore } from '../store/appStore';
+import { SyncIndicator } from './ui/SyncIndicator';
 
 // Logo image URL
 const LOGO_URL = 'https://customer-assets.emergentagent.com/job_carcomponents-3/artifacts/nipikb4p_1317.jpg';
