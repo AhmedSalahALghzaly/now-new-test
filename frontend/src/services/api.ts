@@ -1,55 +1,38 @@
+/**
+ * API Service for Al-Ghazaly Auto Parts
+ * Handles all API calls with axios
+ */
 import axios from 'axios';
 import Constants from 'expo-constants';
-import { useAppStore } from '../store/appStore';
 
-// Get the backend URL from environment variables
-const getApiUrl = () => {
-  // Try to get from extra config
-  const extraUrl = Constants.expoConfig?.extra?.backendUrl;
-  if (extraUrl) return extraUrl;
-  
-  // Try process.env (works in some cases)
-  const envUrl = process.env.EXPO_PUBLIC_BACKEND_URL;
-  if (envUrl) return envUrl;
-  
-  // Default fallback - use relative URL for API
-  return '';
-};
+const API_BASE_URL = Constants.expoConfig?.extra?.backendUrl || 
+  process.env.EXPO_PUBLIC_BACKEND_URL || 
+  '/api';
 
-const API_URL = getApiUrl();
-
-const api = axios.create({
-  baseURL: `${API_URL}/api`,
+export const api = axios.create({
+  baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 15000,
+  withCredentials: true,
 });
 
-// Add auth token to requests
-api.interceptors.request.use((config) => {
-  const token = useAppStore.getState().sessionToken;
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
-
-// API functions
+// Auth APIs
 export const authApi = {
-  exchangeSession: (sessionId: string) => 
-    api.post('/auth/session', { session_id: sessionId }),
+  exchangeSession: (sessionId: string) => api.post('/auth/session', { session_id: sessionId }),
   getMe: () => api.get('/auth/me'),
   logout: () => api.post('/auth/logout'),
 };
 
-export const carBrandsApi = {
+// Car Brand APIs
+export const carBrandApi = {
   getAll: () => api.get('/car-brands'),
   create: (data: any) => api.post('/car-brands', data),
   delete: (id: string) => api.delete(`/car-brands/${id}`),
 };
 
-export const carModelsApi = {
+// Car Model APIs
+export const carModelApi = {
   getAll: (brandId?: string) => api.get('/car-models', { params: { brand_id: brandId } }),
   getById: (id: string) => api.get(`/car-models/${id}`),
   create: (data: any) => api.post('/car-models', data),
@@ -57,76 +40,143 @@ export const carModelsApi = {
   delete: (id: string) => api.delete(`/car-models/${id}`),
 };
 
-export const productBrandsApi = {
+// Product Brand APIs
+export const productBrandApi = {
   getAll: () => api.get('/product-brands'),
   create: (data: any) => api.post('/product-brands', data),
   delete: (id: string) => api.delete(`/product-brands/${id}`),
 };
 
-export const categoriesApi = {
+// Category APIs
+export const categoryApi = {
   getAll: () => api.get('/categories/all'),
   getTree: () => api.get('/categories/tree'),
-  getByParent: (parentId?: string) => api.get('/categories', { params: { parent_id: parentId } }),
   create: (data: any) => api.post('/categories', data),
   delete: (id: string) => api.delete(`/categories/${id}`),
 };
 
-export const productsApi = {
+// Product APIs
+export const productApi = {
   getAll: (params?: any) => api.get('/products', { params }),
   getAllAdmin: () => api.get('/products/all'),
   getById: (id: string) => api.get(`/products/${id}`),
-  search: (query: string) => api.get('/products/search', { params: { q: query } }),
+  search: (q: string) => api.get('/products/search', { params: { q } }),
   create: (data: any) => api.post('/products', data),
   update: (id: string, data: any) => api.put(`/products/${id}`, data),
-  delete: (id: string) => api.delete(`/products/${id}`),
   updatePrice: (id: string, price: number) => api.patch(`/products/${id}/price`, { price }),
-  updateHidden: (id: string, hidden_status: boolean) => api.patch(`/products/${id}/hidden`, { hidden_status }),
+  updateHidden: (id: string, hidden: boolean) => api.patch(`/products/${id}/hidden`, { hidden_status: hidden }),
+  delete: (id: string) => api.delete(`/products/${id}`),
 };
 
-export const customersApi = {
-  getAll: () => api.get('/customers'),
-  getById: (id: string) => api.get(`/customers/${id}`),
-  delete: (id: string) => api.delete(`/customers/${id}`),
-};
-
+// Cart APIs
 export const cartApi = {
   get: () => api.get('/cart'),
-  addItem: (productId: string, quantity: number = 1) => 
-    api.post('/cart/add', { product_id: productId, quantity }),
-  updateItem: (productId: string, quantity: number) => 
-    api.put('/cart/update', { product_id: productId, quantity }),
+  add: (productId: string, quantity: number) => api.post('/cart/add', { product_id: productId, quantity }),
+  update: (productId: string, quantity: number) => api.put('/cart/update', { product_id: productId, quantity }),
   clear: () => api.delete('/cart/clear'),
 };
 
-export const ordersApi = {
+// Order APIs
+export const orderApi = {
   getAll: () => api.get('/orders'),
   getAllAdmin: () => api.get('/orders/all'),
-  getById: (id: string) => api.get(`/orders/${id}`),
-  getPendingCount: (userId: string) => api.get(`/orders/pending-count/${userId}`),
   create: (data: any) => api.post('/orders', data),
-  markViewed: (id: string) => api.patch(`/orders/${id}/viewed`),
-  updateStatus: (id: string, status: string) => api.patch(`/orders/${id}/status?status=${status}`),
+  updateStatus: (id: string, status: string) => api.patch(`/orders/${id}/status`, null, { params: { status } }),
 };
 
-// Comments API
-export const commentsApi = {
-  getProductComments: (productId: string, skip: number = 0, limit: number = 50) =>
-    api.get(`/products/${productId}/comments`, { params: { skip, limit } }),
-  addComment: (productId: string, text: string, rating?: number) =>
-    api.post(`/products/${productId}/comments`, { text, rating }),
-  updateComment: (commentId: string, text: string, rating?: number) =>
-    api.put(`/comments/${commentId}`, { text, rating }),
-  deleteComment: (commentId: string) =>
-    api.delete(`/comments/${commentId}`),
+// Customer APIs
+export const customerApi = {
+  getAll: (sortBy?: string) => api.get('/customers', { params: { sort_by: sortBy } }),
+  getById: (id: string) => api.get(`/customers/${id}`),
 };
 
-// Favorites API
-export const favoritesApi = {
+// Favorite APIs
+export const favoriteApi = {
   getAll: () => api.get('/favorites'),
   check: (productId: string) => api.get(`/favorites/check/${productId}`),
-  add: (productId: string) => api.post('/favorites/add', { product_id: productId }),
-  remove: (productId: string) => api.delete(`/favorites/${productId}`),
   toggle: (productId: string) => api.post('/favorites/toggle', { product_id: productId }),
+};
+
+// Comment APIs
+export const commentApi = {
+  getForProduct: (productId: string) => api.get(`/products/${productId}/comments`),
+  create: (productId: string, text: string, rating?: number) => 
+    api.post(`/products/${productId}/comments`, { text, rating }),
+};
+
+// Partner APIs
+export const partnerApi = {
+  getAll: () => api.get('/partners'),
+  create: (email: string) => api.post('/partners', { email }),
+  delete: (id: string) => api.delete(`/partners/${id}`),
+};
+
+// Admin APIs
+export const adminApi = {
+  getAll: () => api.get('/admins'),
+  create: (email: string, name?: string) => api.post('/admins', { email, name }),
+  delete: (id: string) => api.delete(`/admins/${id}`),
+  getProducts: (adminId: string) => api.get(`/admins/${adminId}/products`),
+  settleRevenue: (adminId: string, productIds: string[], totalAmount: number) =>
+    api.post(`/admins/${adminId}/settle`, { admin_id: adminId, product_ids: productIds, total_amount: totalAmount }),
+  clearRevenue: (adminId: string) => api.post(`/admins/${adminId}/clear-revenue`),
+};
+
+// Supplier APIs
+export const supplierApi = {
+  getAll: () => api.get('/suppliers'),
+  getById: (id: string) => api.get(`/suppliers/${id}`),
+  create: (data: any) => api.post('/suppliers', data),
+  update: (id: string, data: any) => api.put(`/suppliers/${id}`, data),
+  delete: (id: string) => api.delete(`/suppliers/${id}`),
+};
+
+// Distributor APIs
+export const distributorApi = {
+  getAll: () => api.get('/distributors'),
+  getById: (id: string) => api.get(`/distributors/${id}`),
+  create: (data: any) => api.post('/distributors', data),
+  update: (id: string, data: any) => api.put(`/distributors/${id}`, data),
+  delete: (id: string) => api.delete(`/distributors/${id}`),
+};
+
+// Subscriber APIs
+export const subscriberApi = {
+  getAll: () => api.get('/subscribers'),
+  create: (email: string) => api.post('/subscribers', { email }),
+  delete: (id: string) => api.delete(`/subscribers/${id}`),
+};
+
+// Subscription Request APIs
+export const subscriptionRequestApi = {
+  getAll: () => api.get('/subscription-requests'),
+  create: (data: any) => api.post('/subscription-requests', data),
+  approve: (id: string) => api.patch(`/subscription-requests/${id}/approve`),
+  delete: (id: string) => api.delete(`/subscription-requests/${id}`),
+};
+
+// Notification APIs
+export const notificationApi = {
+  getAll: () => api.get('/notifications'),
+  markRead: (id: string) => api.patch(`/notifications/${id}/read`),
+  markAllRead: () => api.post('/notifications/mark-all-read'),
+};
+
+// Analytics APIs
+export const analyticsApi = {
+  getOverview: (startDate?: string, endDate?: string) => 
+    api.get('/analytics/overview', { params: { start_date: startDate, end_date: endDate } }),
+};
+
+// Collection APIs
+export const collectionApi = {
+  getAll: (adminId?: string) => api.get('/collections', { params: { admin_id: adminId } }),
+};
+
+// Sync APIs
+export const syncApi = {
+  pull: (lastPulledAt?: number, tables?: string[]) => 
+    api.post('/sync/pull', { last_pulled_at: lastPulledAt, tables }),
 };
 
 export default api;
