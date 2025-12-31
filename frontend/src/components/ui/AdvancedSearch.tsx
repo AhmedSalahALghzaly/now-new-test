@@ -96,7 +96,7 @@ export const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
 
   // Refs
   const bottomSheetRef = useRef<BottomSheet>(null);
-  const searchInputRef = useRef<TextInput>(null);
+  const searchInputRef = useRef<any>(null);
 
   // State
   const [query, setQuery] = useState(initialQuery);
