@@ -40,8 +40,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({
   moodAware = true,
 }) => {
   const mood = useColorMood();
-  const theme = useTheme();
-  const isDark = theme === 'dark';
+  const { isDark } = useTheme();
 
   // Animation values
   const shimmerTranslate = useSharedValue(-SCREEN_WIDTH);
