@@ -201,48 +201,6 @@ export const Header: React.FC<HeaderProps> = ({
 
       {/* Notification Center */}
       <NotificationCenter visible={showNotifications} onClose={() => setShowNotifications(false)} />
-
-      {/* Mood Switcher Modal */}
-      <Modal
-        visible={showMoodSwitcher}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowMoodSwitcher(false)}
-      >
-        <TouchableOpacity 
-          style={styles.moodOverlay}
-          activeOpacity={1}
-          onPress={() => setShowMoodSwitcher(false)}
-        >
-          <View style={styles.moodContainer}>
-            <Text style={styles.moodTitle}>
-              {language === 'ar' ? 'اختر المزاج' : 'Choose Mood'}
-            </Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              <View style={styles.moodGrid}>
-                {COLOR_MOODS.map((mood) => (
-                  <TouchableOpacity
-                    key={mood.id}
-                    style={[
-                      styles.moodItem,
-                      { backgroundColor: mood.background, borderColor: mood.primary },
-                      currentMood?.primary === mood.primary && styles.moodItemActive,
-                    ]}
-                    onPress={() => handleMoodSelect(mood)}
-                  >
-                    <View style={[styles.moodIcon, { backgroundColor: mood.primary }]}>
-                      <Ionicons name={mood.icon as any} size={20} color="#FFF" />
-                    </View>
-                    <Text style={[styles.moodName, { color: mood.primary }]}>
-                      {language === 'ar' ? mood.nameAr : mood.name}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </ScrollView>
-          </View>
-        </TouchableOpacity>
-      </Modal>
     </View>
   );
 };
