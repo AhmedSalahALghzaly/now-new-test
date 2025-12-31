@@ -23,6 +23,7 @@ export default function OwnerLayout() {
       <Stack.Screen name="suppliers" />
       <Stack.Screen name="distributors" />
       <Stack.Screen name="settings" />
+      <Stack.Screen name="orders" />
     </Stack>
   );
 }
