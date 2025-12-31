@@ -25,6 +25,11 @@ export default function ProductsAdmin() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [error, setError] = useState('');
 
+  // Toast state for feedback
+  const [toastVisible, setToastVisible] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState<'success' | 'error' | 'warning' | 'info'>('success');
+
   // Form state - Basic Info
   const [name, setName] = useState('');
   const [nameAr, setNameAr] = useState('');
