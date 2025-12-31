@@ -225,8 +225,11 @@ export const Header: React.FC<HeaderProps> = ({
         </View>
       </View>
 
-      {/* Global Search Modal */}
+      {/* Global Search Modal (Legacy - can be removed) */}
       <GlobalSearch visible={showSearchModal} onClose={() => setShowSearchModal(false)} />
+
+      {/* Advanced Search Bottom Sheet */}
+      <AdvancedSearch visible={showAdvancedSearch} onClose={() => setShowAdvancedSearch(false)} />
 
       {/* Notification Center */}
       <NotificationCenter visible={showNotifications} onClose={() => setShowNotifications(false)} />
