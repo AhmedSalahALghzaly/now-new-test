@@ -246,7 +246,11 @@ export const useAppStore = create<AppState>()(
         });
       },
 
+      setSessionToken: (token) => set({ sessionToken: token }),
+
       setUserRole: (role) => set({ userRole: role }),
+
+      setHasHydrated: (hydrated) => set({ _hasHydrated: hydrated }),
 
       logout: () => {
         set({
