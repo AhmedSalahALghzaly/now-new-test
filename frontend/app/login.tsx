@@ -159,17 +159,14 @@ export default function LoginScreen() {
         setUserRole(userData.role);
       }
       
-      console.log('User set, will navigate via AuthGuard or manually...');
+      console.log('User set, navigating to home...');
       
-      // The AuthGuard should handle navigation automatically
-      // But we add a fallback with longer delay to ensure state is synced
+      // Force navigation to home page after successful login
       setTimeout(() => {
-        // Check if still on login page (AuthGuard didn't trigger)
-        if (window.location.pathname.includes('login')) {
-          console.log('Manual navigation fallback triggered');
-          router.replace('/(tabs)');
-        }
-      }, 500);
+        console.log('Forcing navigation to tabs...');
+        router.replace('/(tabs)');
+        setProcessingAuth(false);
+      }, 300);
       
     } catch (error: any) {
       console.error('Auth error:', error?.response?.data || error?.message || error);
