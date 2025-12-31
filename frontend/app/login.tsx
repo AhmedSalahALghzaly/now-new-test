@@ -122,10 +122,22 @@ export default function LoginScreen() {
   };
 
   const processSessionId = async (sessionId: string) => {
+    if (processingAuth) return; // Prevent duplicate processing
+    
     setProcessingAuth(true);
+    console.log('Processing session ID:', sessionId);
+    
     try {
       const response = await authApi.exchangeSession(sessionId);
+      console.log('Auth response:', response.data);
+      
       const { user: userData, session_token } = response.data;
+      
+      if (!userData || !session_token) {
+        console.error('Invalid auth response - missing user or token');
+        setProcessingAuth(false);
+        return;
+      }
       
       // ATOMIC UPDATE: Set all auth state in one go
       // This triggers the reactive auth guard to navigate
@@ -134,11 +146,15 @@ export default function LoginScreen() {
         setUserRole(userData.role);
       }
       
-      // Immediate navigation after atomic update
-      router.replace('/(tabs)');
-    } catch (error) {
-      console.error('Auth error:', error);
-    } finally {
+      console.log('Auth successful, navigating to home...');
+      
+      // Small delay to ensure state is updated before navigation
+      setTimeout(() => {
+        router.replace('/(tabs)');
+      }, 100);
+      
+    } catch (error: any) {
+      console.error('Auth error:', error?.response?.data || error?.message || error);
       setProcessingAuth(false);
     }
   };
