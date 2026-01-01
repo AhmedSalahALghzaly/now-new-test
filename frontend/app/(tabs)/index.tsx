@@ -53,6 +53,9 @@ export default function HomeScreen() {
   // Favorites state
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
 
+  // Banners state (promotions with type 'banner')
+  const [banners, setBanners] = useState<any[]>([]);
+
   const fetchData = async () => {
     try {
       console.log('Fetching data...');
