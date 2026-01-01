@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, ActivityIndicator, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -7,6 +7,8 @@ import { useTheme } from '../../src/hooks/useTheme';
 import { useTranslation } from '../../src/hooks/useTranslation';
 import { categoriesApi } from '../../src/services/api';
 import { Header } from '../../src/components/Header';
+import { ImageUploader } from '../../src/components/ui/ImageUploader';
+import { Toast } from '../../src/components/ui/FormFeedback';
 
 export default function CategoriesAdmin() {
   const { colors } = useTheme();
