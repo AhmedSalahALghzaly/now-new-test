@@ -328,111 +328,135 @@ const ShippingStep = ({
   </Animated.View>
 );
 
-// Step 3: Confirmation
+// Step 3: Confirmation with Enhanced Pricing Display
 const ConfirmStep = ({
   cartItems,
   getTotal,
+  getOriginalTotal,
+  getTotalSavings,
   shippingAddress,
   phone,
   notes,
   language,
   isRTL,
   colors,
-}: any) => (
-  <Animated.View
-    entering={SlideInRight.duration(300)}
-    exiting={SlideOutLeft.duration(300)}
-    style={styles.stepContent}
-  >
-    <Text style={[styles.stepTitle, { color: colors.text }, isRTL && styles.textRight]}>
-      {language === 'ar' ? 'تأكيد الطلب' : 'Confirm Order'}
-    </Text>
-    <Text style={[styles.stepSubtitle, { color: colors.textSecondary }, isRTL && styles.textRight]}>
-      {language === 'ar' ? 'راجع تفاصيل الطلب قبل التأكيد' : 'Review order details before confirming'}
-    </Text>
+}: any) => {
+  const totalSavings = getTotalSavings();
+  
+  return (
+    <Animated.View
+      entering={SlideInRight.duration(300)}
+      exiting={SlideOutLeft.duration(300)}
+      style={styles.stepContent}
+    >
+      <Text style={[styles.stepTitle, { color: colors.text }, isRTL && styles.textRight]}>
+        {language === 'ar' ? 'تأكيد الطلب' : 'Confirm Order'}
+      </Text>
+      <Text style={[styles.stepSubtitle, { color: colors.textSecondary }, isRTL && styles.textRight]}>
+        {language === 'ar' ? 'راجع تفاصيل الطلب قبل التأكيد' : 'Review order details before confirming'}
+      </Text>
 
-    {/* Order Summary */}
-    <View style={[styles.confirmCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-      <View style={[styles.confirmSection, isRTL && styles.rowReverse]}>
-        <View style={[styles.confirmIconCircle, { backgroundColor: `${NEON_NIGHT_THEME.primary}20` }]}>
-          <Ionicons name="cart" size={20} color={NEON_NIGHT_THEME.primary} />
-        </View>
-        <View style={styles.confirmSectionContent}>
-          <Text style={[styles.confirmSectionTitle, { color: colors.text }, isRTL && styles.textRight]}>
-            {language === 'ar' ? 'ملخص الطلب' : 'Order Summary'}
-          </Text>
-          <Text style={[styles.confirmSectionValue, { color: colors.textSecondary }, isRTL && styles.textRight]}>
-            {cartItems.length} {language === 'ar' ? 'منتج' : 'items'} • {getTotal().toFixed(0)} ج.م
-          </Text>
-        </View>
-      </View>
-
-      <View style={[styles.confirmDivider, { backgroundColor: colors.border }]} />
-
-      <View style={[styles.confirmSection, isRTL && styles.rowReverse]}>
-        <View style={[styles.confirmIconCircle, { backgroundColor: `${NEON_NIGHT_THEME.primary}20` }]}>
-          <Ionicons name="location" size={20} color={NEON_NIGHT_THEME.primary} />
-        </View>
-        <View style={styles.confirmSectionContent}>
-          <Text style={[styles.confirmSectionTitle, { color: colors.text }, isRTL && styles.textRight]}>
-            {language === 'ar' ? 'عنوان التوصيل' : 'Shipping Address'}
-          </Text>
-          <Text style={[styles.confirmSectionValue, { color: colors.textSecondary }, isRTL && styles.textRight]}>
-            {shippingAddress}
-          </Text>
-        </View>
-      </View>
-
-      <View style={[styles.confirmDivider, { backgroundColor: colors.border }]} />
-
-      <View style={[styles.confirmSection, isRTL && styles.rowReverse]}>
-        <View style={[styles.confirmIconCircle, { backgroundColor: `${NEON_NIGHT_THEME.primary}20` }]}>
-          <Ionicons name="call" size={20} color={NEON_NIGHT_THEME.primary} />
-        </View>
-        <View style={styles.confirmSectionContent}>
-          <Text style={[styles.confirmSectionTitle, { color: colors.text }, isRTL && styles.textRight]}>
-            {language === 'ar' ? 'رقم الهاتف' : 'Phone'}
-          </Text>
-          <Text style={[styles.confirmSectionValue, { color: colors.textSecondary }, isRTL && styles.textRight]}>
-            {phone}
-          </Text>
-        </View>
-      </View>
-
-      {notes ? (
-        <>
-          <View style={[styles.confirmDivider, { backgroundColor: colors.border }]} />
-          <View style={[styles.confirmSection, isRTL && styles.rowReverse]}>
-            <View style={[styles.confirmIconCircle, { backgroundColor: `${NEON_NIGHT_THEME.primary}20` }]}>
-              <Ionicons name="document-text" size={20} color={NEON_NIGHT_THEME.primary} />
-            </View>
-            <View style={styles.confirmSectionContent}>
-              <Text style={[styles.confirmSectionTitle, { color: colors.text }, isRTL && styles.textRight]}>
-                {language === 'ar' ? 'ملاحظات' : 'Notes'}
+      {/* Order Summary with Savings */}
+      <View style={[styles.confirmCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <View style={[styles.confirmSection, isRTL && styles.rowReverse]}>
+          <View style={[styles.confirmIconCircle, { backgroundColor: `${NEON_NIGHT_THEME.primary}20` }]}>
+            <Ionicons name="cart" size={20} color={NEON_NIGHT_THEME.primary} />
+          </View>
+          <View style={styles.confirmSectionContent}>
+            <Text style={[styles.confirmSectionTitle, { color: colors.text }, isRTL && styles.textRight]}>
+              {language === 'ar' ? 'ملخص الطلب' : 'Order Summary'}
+            </Text>
+            <View style={[styles.orderPriceBreakdown, isRTL && { alignItems: 'flex-end' }]}>
+              <Text style={[styles.confirmSectionValue, { color: colors.textSecondary }]}>
+                {cartItems.length} {language === 'ar' ? 'منتج' : 'items'}
               </Text>
-              <Text style={[styles.confirmSectionValue, { color: colors.textSecondary }, isRTL && styles.textRight]}>
-                {notes}
+              {totalSavings > 0 && (
+                <View style={[styles.confirmSavingsRow, isRTL && styles.rowReverse]}>
+                  <Text style={[styles.confirmOriginalPrice, { color: colors.textSecondary }]}>
+                    {getOriginalTotal().toFixed(0)} ج.م
+                  </Text>
+                  <View style={[styles.confirmSavingsBadge, { backgroundColor: NEON_NIGHT_THEME.accent }]}>
+                    <Ionicons name="sparkles" size={12} color="#FFF" />
+                    <Text style={styles.confirmSavingsText}>
+                      -{totalSavings.toFixed(0)}
+                    </Text>
+                  </View>
+                </View>
+              )}
+              <Text style={[styles.confirmFinalPrice, { color: NEON_NIGHT_THEME.primary }]}>
+                {getTotal().toFixed(0)} ج.م
               </Text>
             </View>
           </View>
-        </>
-      ) : null}
-    </View>
+        </View>
 
-    {/* Payment Method */}
-    <View style={[styles.paymentCard, { backgroundColor: `${NEON_NIGHT_THEME.primary}15`, borderColor: NEON_NIGHT_THEME.primary }]}>
-      <View style={[styles.paymentRow, isRTL && styles.rowReverse]}>
-        <Ionicons name="cash-outline" size={24} color={NEON_NIGHT_THEME.primary} />
-        <Text style={[styles.paymentText, { color: colors.text }]}>
-          {language === 'ar' ? 'الدفع عند الاستلام' : 'Cash on Delivery'}
-        </Text>
-        <View style={[styles.paymentBadge, { backgroundColor: NEON_NIGHT_THEME.primary }]}>
-          <Text style={styles.paymentBadgeText}>COD</Text>
+        <View style={[styles.confirmDivider, { backgroundColor: colors.border }]} />
+
+        <View style={[styles.confirmSection, isRTL && styles.rowReverse]}>
+          <View style={[styles.confirmIconCircle, { backgroundColor: `${NEON_NIGHT_THEME.primary}20` }]}>
+            <Ionicons name="location" size={20} color={NEON_NIGHT_THEME.primary} />
+          </View>
+          <View style={styles.confirmSectionContent}>
+            <Text style={[styles.confirmSectionTitle, { color: colors.text }, isRTL && styles.textRight]}>
+              {language === 'ar' ? 'عنوان التوصيل' : 'Shipping Address'}
+            </Text>
+            <Text style={[styles.confirmSectionValue, { color: colors.textSecondary }, isRTL && styles.textRight]}>
+              {shippingAddress}
+            </Text>
+          </View>
+        </View>
+
+        <View style={[styles.confirmDivider, { backgroundColor: colors.border }]} />
+
+        <View style={[styles.confirmSection, isRTL && styles.rowReverse]}>
+          <View style={[styles.confirmIconCircle, { backgroundColor: `${NEON_NIGHT_THEME.primary}20` }]}>
+            <Ionicons name="call" size={20} color={NEON_NIGHT_THEME.primary} />
+          </View>
+          <View style={styles.confirmSectionContent}>
+            <Text style={[styles.confirmSectionTitle, { color: colors.text }, isRTL && styles.textRight]}>
+              {language === 'ar' ? 'رقم الهاتف' : 'Phone'}
+            </Text>
+            <Text style={[styles.confirmSectionValue, { color: colors.textSecondary }, isRTL && styles.textRight]}>
+              {phone}
+            </Text>
+          </View>
+        </View>
+
+        {notes ? (
+          <>
+            <View style={[styles.confirmDivider, { backgroundColor: colors.border }]} />
+            <View style={[styles.confirmSection, isRTL && styles.rowReverse]}>
+              <View style={[styles.confirmIconCircle, { backgroundColor: `${NEON_NIGHT_THEME.primary}20` }]}>
+                <Ionicons name="document-text" size={20} color={NEON_NIGHT_THEME.primary} />
+              </View>
+              <View style={styles.confirmSectionContent}>
+                <Text style={[styles.confirmSectionTitle, { color: colors.text }, isRTL && styles.textRight]}>
+                  {language === 'ar' ? 'ملاحظات' : 'Notes'}
+                </Text>
+                <Text style={[styles.confirmSectionValue, { color: colors.textSecondary }, isRTL && styles.textRight]}>
+                  {notes}
+                </Text>
+              </View>
+            </View>
+          </>
+        ) : null}
+      </View>
+
+      {/* Payment Method */}
+      <View style={[styles.paymentCard, { backgroundColor: `${NEON_NIGHT_THEME.primary}15`, borderColor: NEON_NIGHT_THEME.primary }]}>
+        <View style={[styles.paymentRow, isRTL && styles.rowReverse]}>
+          <Ionicons name="cash-outline" size={24} color={NEON_NIGHT_THEME.primary} />
+          <Text style={[styles.paymentText, { color: colors.text }]}>
+            {language === 'ar' ? 'الدفع عند الاستلام' : 'Cash on Delivery'}
+          </Text>
+          <View style={[styles.paymentBadge, { backgroundColor: NEON_NIGHT_THEME.primary }]}>
+            <Text style={styles.paymentBadgeText}>COD</Text>
+          </View>
         </View>
       </View>
-    </View>
-  </Animated.View>
-);
+    </Animated.View>
+  );
+};
 
 export default function CheckoutScreen() {
   const { colors } = useTheme();
