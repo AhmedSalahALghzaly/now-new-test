@@ -837,6 +837,54 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
   },
+  reviewSummary: {
+    borderTopWidth: 1,
+    paddingTop: 12,
+    marginTop: 8,
+  },
+  reviewSummaryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 4,
+  },
+  reviewSummaryLabel: {
+    fontSize: 13,
+  },
+  reviewOriginalTotal: {
+    fontSize: 13,
+    textDecorationLine: 'line-through',
+  },
+  savingsIconRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  reviewSavingsLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  reviewSavingsValue: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  reviewItemMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 2,
+  },
+  reviewDiscountBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  reviewDiscountBadgeText: {
+    color: '#FFF',
+    fontSize: 10,
+    fontWeight: '700',
+  },
   reviewTotal: {
     flexDirection: 'row',
     justifyContent: 'space-between',
