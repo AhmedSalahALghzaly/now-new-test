@@ -1192,4 +1192,35 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
   },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+  },
+  emptyCartContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  emptyCartTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    marginTop: 16,
+  },
+  emptyCartSubtitle: {
+    fontSize: 15,
+    marginTop: 8,
+    textAlign: 'center',
+  },
+  shopButton: {
+    marginTop: 24,
+    paddingHorizontal: 32,
+    paddingVertical: 14,
+    borderRadius: 12,
+  },
+  shopButtonText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '700',
+  },
 });
