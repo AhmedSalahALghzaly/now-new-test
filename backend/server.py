@@ -1793,6 +1793,12 @@ async def create_admin_assisted_order(data: AdminAssistedOrderCreate, request: R
 
 @api_router.patch("/orders/{order_id}/status")
 async def update_order_status(order_id: str, status: str, request: Request):
+    # Authentication check
+    user = await get_current_user(request)
+    role = await get_user_role(user) if user else "guest"
+    if role not in ["owner", "partner", "admin"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
     valid = ["pending", "preparing", "shipped", "out_for_delivery", "delivered", "cancelled", "complete"]
     if status not in valid:
         raise HTTPException(status_code=400, detail="Invalid status")
