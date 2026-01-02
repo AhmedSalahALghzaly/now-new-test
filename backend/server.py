@@ -1873,6 +1873,203 @@ async def get_customer(customer_id: str, request: Request):
     
     return c_data
 
+# ==================== Admin Customer Management Routes ====================
+
+@api_router.get("/admin/customer/{user_id}/favorites")
+async def get_customer_favorites_admin(user_id: str, request: Request):
+    """Get customer's favorites (admin view)"""
+    user = await get_current_user(request)
+    role = await get_user_role(user) if user else "guest"
+    if role not in ["owner", "partner", "admin"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    favs = await db.favorites.find({"user_id": user_id, "deleted_at": None}).to_list(1000)
+    result = []
+    for f in favs:
+        product = await db.products.find_one({"_id": f["product_id"]})
+        if product:
+            result.append({**serialize_doc(f), "product": serialize_doc(product)})
+    return {"favorites": result, "total": len(result)}
+
+@api_router.get("/admin/customer/{user_id}/cart")
+async def get_customer_cart_admin(user_id: str, request: Request):
+    """Get customer's cart (admin view)"""
+    user = await get_current_user(request)
+    role = await get_user_role(user) if user else "guest"
+    if role not in ["owner", "partner", "admin"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    cart = await db.carts.find_one({"user_id": user_id})
+    if not cart:
+        return {"items": [], "total": 0}
+    
+    items = cart.get("items", [])
+    result_items = []
+    for item in items:
+        product = await db.products.find_one({"_id": item.get("product_id")})
+        if product:
+            result_items.append({
+                **item,
+                "product": serialize_doc(product)
+            })
+    
+    return {"items": result_items, "total": len(result_items)}
+
+@api_router.get("/admin/customer/{user_id}/orders")
+async def get_customer_orders_admin(user_id: str, request: Request):
+    """Get customer's orders (admin view)"""
+    user = await get_current_user(request)
+    role = await get_user_role(user) if user else "guest"
+    if role not in ["owner", "partner", "admin"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    orders = await db.orders.find({"user_id": user_id}).sort("created_at", -1).to_list(10000)
+    result = []
+    for o in orders:
+        order_data = serialize_doc(o)
+        # Get order items with product details
+        items = order_data.get("items", [])
+        enriched_items = []
+        for item in items:
+            product = await db.products.find_one({"_id": item.get("product_id")})
+            if product:
+                enriched_items.append({**item, "product": serialize_doc(product)})
+            else:
+                enriched_items.append(item)
+        order_data["items"] = enriched_items
+        result.append(order_data)
+    
+    return {"orders": result, "total": len(result)}
+
+@api_router.patch("/admin/customer/{user_id}/orders/mark-viewed")
+async def mark_customer_orders_viewed(user_id: str, request: Request):
+    """Mark all customer orders as viewed by admin"""
+    user = await get_current_user(request)
+    role = await get_user_role(user) if user else "guest"
+    if role not in ["owner", "partner", "admin"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    await db.orders.update_many(
+        {"user_id": user_id, "admin_viewed": {"$ne": True}},
+        {"$set": {"admin_viewed": True, "updated_at": datetime.now(timezone.utc)}}
+    )
+    return {"success": True}
+
+@api_router.get("/orders/pending-count/{user_id}")
+async def get_pending_order_count(user_id: str, request: Request):
+    """Get count of pending orders for a customer"""
+    user = await get_current_user(request)
+    role = await get_user_role(user) if user else "guest"
+    if role not in ["owner", "partner", "admin"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    count = await db.orders.count_documents({
+        "user_id": user_id,
+        "status": {"$in": ["pending", "preparing"]},
+        "admin_viewed": {"$ne": True}
+    })
+    return {"count": count}
+
+class AdminOrderCreate(BaseModel):
+    user_id: str
+    first_name: str
+    last_name: Optional[str] = ""
+    email: Optional[str] = ""
+    phone: str
+    street_address: str
+    city: str
+    state: Optional[str] = ""
+    country: Optional[str] = "Egypt"
+    delivery_instructions: Optional[str] = ""
+    payment_method: Optional[str] = "cash_on_delivery"
+    notes: Optional[str] = ""
+    items: List[dict]
+
+@api_router.post("/admin/orders/create")
+async def create_admin_order(data: AdminOrderCreate, request: Request):
+    """Create order on behalf of a customer (admin)"""
+    user = await get_current_user(request)
+    role = await get_user_role(user) if user else "guest"
+    if role not in ["owner", "partner", "admin"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    if not data.items or len(data.items) == 0:
+        raise HTTPException(status_code=400, detail="No items in order")
+    
+    # Get customer info
+    customer = await db.users.find_one({"_id": data.user_id})
+    customer_name = f"{data.first_name} {data.last_name}".strip() or (customer.get("name") if customer else "Unknown")
+    
+    # Build order items with pricing
+    order_items = []
+    subtotal = 0
+    for item in data.items:
+        product = await db.products.find_one({"_id": item.get("product_id")})
+        if product:
+            price = product.get("price", 0)
+            quantity = item.get("quantity", 1)
+            line_total = price * quantity
+            subtotal += line_total
+            order_items.append({
+                "product_id": product["_id"],
+                "product_name": product.get("name"),
+                "product_name_ar": product.get("name_ar"),
+                "sku": product.get("sku"),
+                "quantity": quantity,
+                "original_unit_price": price,
+                "final_unit_price": price,
+                "line_total": line_total
+            })
+    
+    shipping_cost = 150  # Fixed shipping cost
+    total = subtotal + shipping_cost
+    
+    # Generate order number
+    order_count = await db.orders.count_documents({})
+    order_number = f"ORD-{order_count + 1:06d}"
+    
+    order_doc = {
+        "_id": str(uuid.uuid4()),
+        "order_number": order_number,
+        "user_id": data.user_id,
+        "customer_name": customer_name,
+        "customer_email": data.email or (customer.get("email") if customer else ""),
+        "customer_phone": data.phone,
+        "shipping_address": f"{data.street_address}, {data.city}, {data.state}, {data.country}".strip(", "),
+        "delivery_instructions": data.delivery_instructions,
+        "payment_method": data.payment_method,
+        "items": order_items,
+        "subtotal": subtotal,
+        "shipping_cost": shipping_cost,
+        "discount": 0,
+        "total": total,
+        "status": "pending",
+        "order_source": "admin_assisted",
+        "created_by_admin_id": user["id"],
+        "admin_viewed": True,
+        "notes": data.notes,
+        "created_at": datetime.now(timezone.utc),
+        "updated_at": datetime.now(timezone.utc)
+    }
+    
+    await db.orders.insert_one(order_doc)
+    
+    return serialize_doc(order_doc)
+
+@api_router.delete("/orders/{order_id}")
+async def delete_order(order_id: str, request: Request):
+    """Delete an order (admin only)"""
+    user = await get_current_user(request)
+    role = await get_user_role(user) if user else "guest"
+    if role not in ["owner", "partner", "admin"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    result = await db.orders.delete_one({"_id": order_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Order not found")
+    
+    return {"success": True, "message": "Order deleted"}
+
 # ==================== Favorites Routes ====================
 
 @api_router.get("/favorites")
