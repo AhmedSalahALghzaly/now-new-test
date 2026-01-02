@@ -116,8 +116,8 @@ export default function TabLayout() {
             ),
           }}
         />
-        {/* Center spacer for Owner button - only when canAccessOwner */}
-        {canAccessOwner && (
+        {/* Center spacer for Admin/Owner button - only when showCenterButton */}
+        {showCenterButton && (
           <Tabs.Screen
             name="owner-placeholder"
             options={{
@@ -157,10 +157,10 @@ export default function TabLayout() {
         />
       </Tabs>
       
-      {/* Owner Access Center Button - Floating above tab bar */}
-      {canAccessOwner && (
+      {/* Admin/Owner Access Center Button - Floating above tab bar */}
+      {showCenterButton && (
         <View style={styles.ownerButtonContainer}>
-          <OwnerCenterButton />
+          <CenterAccessButton />
         </View>
       )}
     </View>
