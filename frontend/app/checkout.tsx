@@ -674,7 +674,7 @@ export default function CheckoutScreen() {
           )}
           {currentStep === 2 && (
             <ConfirmStep
-              cartItems={cartItems}
+              cartItems={displayCartItems}
               getTotal={getTotal}
               getOriginalTotal={getOriginalTotal}
               getTotalSavings={getTotalSavings}
