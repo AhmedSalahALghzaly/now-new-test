@@ -463,7 +463,7 @@ export default function CheckoutScreen() {
   const { t, isRTL, language } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { cartItems, clearLocalCart, user, clearCart } = useAppStore();
+  const { cartItems, clearLocalCart, user, clearCart, setCartItems } = useAppStore();
 
   const [currentStep, setCurrentStep] = useState(0);
   const [shippingAddress, setShippingAddress] = useState('');
@@ -472,6 +472,34 @@ export default function CheckoutScreen() {
   const [loading, setLoading] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const [orderPlaced, setOrderPlaced] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [serverCartItems, setServerCartItems] = useState<any[]>([]);
+
+  // Fetch server cart on mount
+  useEffect(() => {
+    const fetchServerCart = async () => {
+      if (!user) {
+        setInitialLoading(false);
+        return;
+      }
+      
+      try {
+        const response = await cartApi.get();
+        const items = response.data.items || [];
+        setServerCartItems(items);
+        setCartItems(items);
+      } catch (error) {
+        console.error('Error fetching cart:', error);
+      } finally {
+        setInitialLoading(false);
+      }
+    };
+    
+    fetchServerCart();
+  }, [user]);
+
+  // Use server cart items for display (fallback to store if not loaded yet)
+  const displayCartItems = serverCartItems.length > 0 ? serverCartItems : cartItems;
 
   const stepLabels = language === 'ar'
     ? ['المراجعة', 'التوصيل', 'التأكيد']
@@ -479,29 +507,29 @@ export default function CheckoutScreen() {
 
   // Calculate total using server-side cart pricing (final_unit_price)
   const getTotal = useCallback(() => {
-    return cartItems.reduce((sum, item: any) => {
+    return displayCartItems.reduce((sum, item: any) => {
       // Use server-side pricing: final_unit_price first, fallback to legacy fields
       const price = item.final_unit_price || item.discountedPrice || item.product?.price || 0;
       return sum + price * item.quantity;
     }, 0);
-  }, [cartItems]);
+  }, [displayCartItems]);
 
   // Calculate original total (before any discounts)
   const getOriginalTotal = useCallback(() => {
-    return cartItems.reduce((sum, item: any) => {
+    return displayCartItems.reduce((sum, item: any) => {
       const price = item.original_unit_price || item.product?.price || 0;
       return sum + price * item.quantity;
     }, 0);
-  }, [cartItems]);
+  }, [displayCartItems]);
 
   // Calculate total savings from discounts
   const getTotalSavings = useCallback(() => {
-    return cartItems.reduce((sum, item: any) => {
+    return displayCartItems.reduce((sum, item: any) => {
       const originalPrice = item.original_unit_price || item.product?.price || 0;
       const finalPrice = item.final_unit_price || item.discountedPrice || item.product?.price || 0;
       return sum + (originalPrice - finalPrice) * item.quantity;
     }, 0);
-  }, [cartItems]);
+  }, [displayCartItems]);
 
   const validateStep = () => {
     if (currentStep === 1) {
