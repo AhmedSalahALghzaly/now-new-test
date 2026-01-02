@@ -135,9 +135,9 @@ export default function TabLayout() {
         <Tabs.Screen
           name="cart"
           options={{
-            title: t('cart'),
+            title: language === 'ar' ? 'حسابي' : 'My Hub',
             tabBarIcon: ({ color, size }) => (
-              <Ionicons name="cart" size={size} color={color} />
+              <Ionicons name="bag-handle" size={size} color={color} />
             ),
             tabBarBadge: cartCount > 0 ? cartCount : undefined,
             tabBarBadgeStyle: {
