@@ -113,7 +113,7 @@ const BarChart = ({ data, height = 150 }: { data: { value: number; label: string
               <Text style={styles.barValue}>{item.value}</Text>
             </View>
           );
-        })})
+        })}
       </View>
     </View>
   );
