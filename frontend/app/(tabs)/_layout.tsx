@@ -34,25 +34,49 @@ export default function TabLayout() {
   ) || userRole === 'admin';
   const canAccessOwner = isOwner || isPartner;
 
-  // Custom center button for Owner Access
-  const OwnerCenterButton = () => {
-    if (!canAccessOwner) return null;
-    
-    return (
-      <TouchableOpacity
-        style={styles.ownerButton}
-        onPress={() => router.push('/owner')}
-        activeOpacity={0.8}
-      >
-        <LinearGradient
-          colors={['#8B5CF6', '#6366F1']}
-          style={styles.ownerButtonGradient}
+  // Custom center button for Owner/Admin Access
+  const CenterAccessButton = () => {
+    // Show Owner button for owners/partners
+    if (canAccessOwner) {
+      return (
+        <TouchableOpacity
+          style={styles.ownerButton}
+          onPress={() => router.push('/owner')}
+          activeOpacity={0.8}
         >
-          <Ionicons name="diamond" size={24} color="#FFF" />
-        </LinearGradient>
-      </TouchableOpacity>
-    );
+          <LinearGradient
+            colors={['#8B5CF6', '#6366F1']}
+            style={styles.ownerButtonGradient}
+          >
+            <Ionicons name="diamond" size={24} color="#FFF" />
+          </LinearGradient>
+        </TouchableOpacity>
+      );
+    }
+    
+    // Show Admin button for admins
+    if (isAdmin) {
+      return (
+        <TouchableOpacity
+          style={styles.ownerButton}
+          onPress={() => router.push('/admin')}
+          activeOpacity={0.8}
+        >
+          <LinearGradient
+            colors={['#10B981', '#059669']}
+            style={styles.ownerButtonGradient}
+          >
+            <Ionicons name="settings" size={24} color="#FFF" />
+          </LinearGradient>
+        </TouchableOpacity>
+      );
+    }
+    
+    return null;
   };
+
+  // Determine if we should show the center button
+  const showCenterButton = canAccessOwner || isAdmin;
 
   return (
     <View style={{ flex: 1 }}>
