@@ -143,6 +143,9 @@ export const favoriteApi = {
   toggle: (productId: string) => api.post('/favorites/toggle', { product_id: productId }),
 };
 
+// Alias for existing code
+export const favoritesApi = favoriteApi;
+
 // Comment APIs
 export const commentApi = {
   getForProduct: (productId: string) => api.get(`/products/${productId}/comments`),
