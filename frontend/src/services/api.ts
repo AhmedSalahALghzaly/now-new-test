@@ -94,13 +94,30 @@ export const cartApi = {
   clear: () => api.delete('/cart/clear'),
 };
 
-// Order APIs
+// Order APIs (Enhanced with Admin-Assisted Orders)
 export const orderApi = {
   getAll: () => api.get('/orders'),
   getAllAdmin: () => api.get('/orders/all'),
   create: (data: any) => api.post('/orders', data),
+  createAdminAssisted: (data: {
+    customer_id: string;
+    items: Array<{
+      product_id: string;
+      quantity: number;
+      original_unit_price?: number;
+      final_unit_price?: number;
+      discount_details?: any;
+      bundle_group_id?: string;
+    }>;
+    shipping_address: string;
+    phone: string;
+    notes?: string;
+  }) => api.post('/orders/admin-assisted', data),
   updateStatus: (id: string, status: string) => api.patch(`/orders/${id}/status`, null, { params: { status } }),
 };
+
+// Legacy aliases
+export const ordersApi = orderApi;
 
 // Customer APIs
 export const customerApi = {
