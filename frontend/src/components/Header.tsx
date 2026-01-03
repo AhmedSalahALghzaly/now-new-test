@@ -114,9 +114,11 @@ export const Header: React.FC<HeaderProps> = ({
           </View>
         )}
 
-        {/* Center Section - Sync Indicator */}
+        {/* Center Section - Title (when no back button) */}
         <View style={styles.centerSection}>
-          <SyncIndicator compact={false} showLabel={true} />
+          {!showBack && !title && (
+            <View style={{ flex: 1 }} />
+          )}
         </View>
 
         {/* Icons Section - Far left in RTL, Far right in LTR */}
