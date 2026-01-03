@@ -1204,7 +1204,7 @@ export const UnifiedShoppingHub: React.FC<UnifiedShoppingHubProps> = ({
                     </View>
 
                     {/* Admin Status Actions */}
-                    {canEdit && order.status !== 'delivered' && order.status !== 'cancelled' && (
+                    {canEditOrderStatus && order.status !== 'delivered' && order.status !== 'cancelled' && (
                       <View style={styles.orderActions}>
                         {order.status === 'pending' && (
                           <TouchableOpacity
