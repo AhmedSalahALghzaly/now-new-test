@@ -114,8 +114,10 @@ export const orderApi = {
     notes?: string;
   }) => api.post('/orders/admin-assisted', data),
   updateStatus: (id: string, status: string) => api.patch(`/orders/${id}/status`, null, { params: { status } }),
+  updateDiscount: (id: string, discount: number) => api.patch(`/orders/${id}/discount`, { discount }),
   delete: (id: string) => api.delete(`/orders/${id}`),
   getPendingCount: (userId: string) => api.get(`/orders/pending-count/${userId}`),
+  getById: (id: string) => api.get(`/admin/orders/${id}`),
 };
 
 // Legacy aliases
