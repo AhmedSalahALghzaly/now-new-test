@@ -596,4 +596,16 @@ export const useIsAdmin = () => {
   return userRole === 'admin';
 };
 
+// Check if user is the owner only
+export const useIsOwner = () => {
+  const userRole = useAppStore((state) => state.userRole);
+  return userRole === 'owner';
+};
+
+// Check if user is owner or partner
+export const useIsOwnerOrPartner = () => {
+  const userRole = useAppStore((state) => state.userRole);
+  return userRole === 'owner' || userRole === 'partner';
+};
+
 export default useAppStore;
