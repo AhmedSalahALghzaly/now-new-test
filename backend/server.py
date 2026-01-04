@@ -2129,17 +2129,27 @@ async def get_admin_order_detail(order_id: str, request: Request):
 
 @api_router.delete("/orders/{order_id}")
 async def delete_order(order_id: str, request: Request):
-    """Delete an order (admin only)"""
+    """Delete an order (OWNER ONLY - hard delete)"""
     user = await get_current_user(request)
     role = await get_user_role(user) if user else "guest"
-    if role not in ["owner", "partner", "admin"]:
-        raise HTTPException(status_code=403, detail="Access denied")
+    # Only owner can permanently delete orders
+    if role != "owner":
+        raise HTTPException(status_code=403, detail="Only owner can delete orders")
+    
+    # Get order details before deletion for analytics update
+    order = await db.orders.find_one({"_id": order_id})
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
     
     result = await db.orders.delete_one({"_id": order_id})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Order not found")
     
-    return {"success": True, "message": "Order deleted"}
+    # Broadcast to update analytics in real-time
+    await manager.broadcast({"type": "order_deleted", "order_id": order_id, "order_total": order.get("total", 0)})
+    await manager.broadcast({"type": "sync", "tables": ["orders", "analytics"]})
+    
+    return {"success": True, "message": "Order permanently deleted"}
 
 # ==================== Favorites Routes ====================
 
