@@ -120,11 +120,11 @@ export default function CustomersAdmin() {
 
   const handleViewOrders = useCallback((customer) => {
     openCustomerProfile(customer, 'orders');
-    // Reset pending count for this customer
-    setPendingOrderCounts(prev => ({ ...prev, [customer.user_id]: 0 }));
+    // Reset pending count for this customer - use customer.id
+    setPendingOrderCounts(prev => ({ ...prev, [customer.id]: 0 }));
   }, [openCustomerProfile]);
 
-  const handleDelete = useCallback(async (id: string) => {
+  const handleDelete = useCallback(async (id) => {
     try {
       await customersApi.delete(id);
       fetchCustomers();
@@ -133,7 +133,7 @@ export default function CustomersAdmin() {
     }
   }, [fetchCustomers]);
 
-  const formatDate = useCallback((dateStr: string) => {
+  const formatDate = useCallback((dateStr) => {
     if (!dateStr) return '';
     const date = new Date(dateStr);
     return date.toLocaleDateString(language === 'ar' ? 'ar-EG' : 'en-US', {
@@ -154,7 +154,7 @@ export default function CustomersAdmin() {
           showCart={false} 
         />
         <UnifiedShoppingHub
-          customerId={selectedCustomer.user_id}
+          customerId={selectedCustomer.id}
           customerData={selectedCustomer}
           isAdminView={true}
           onClose={() => {
