@@ -21,8 +21,6 @@ import { ListItemSkeleton } from '../../src/components/ui/Skeleton';
 import { OrderStatusIndicator } from '../../src/components/ui/OrderStatusIndicator';
 import api from '../../src/services/api';
 
-type SortMode = 'most_purchased' | 'highest_value';
-
 export default function CustomersScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -33,9 +31,9 @@ export default function CustomersScreen() {
 
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [sortMode, setSortMode] = useState<SortMode>('most_purchased');
+  const [sortMode, setSortMode] = useState('most_purchased');
   // Store order status info per customer
-  const [customerOrderStatus, setCustomerOrderStatus] = useState<{[key: string]: { status: string; activeCount: number }}>({});
+  const [customerOrderStatus, setCustomerOrderStatus] = useState({});
 
   const fetchCustomers = async () => {
     try {
