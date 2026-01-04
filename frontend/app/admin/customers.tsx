@@ -267,31 +267,14 @@ export default function CustomersAdmin() {
 
                 {/* Action Icons */}
                 <View style={styles.actionIcons}>
-                  {/* Order Status Indicator - Pulsing Yellow (Non-clickable) */}
-                  {pendingOrderCounts[customer.user_id] > 0 && (
-                    <Animated.View 
-                      style={[
-                        styles.orderIndicator, 
-                        { 
-                          backgroundColor: '#f59e0b',
-                          transform: [{ scale: pulseAnim }],
-                          shadowColor: '#f59e0b',
-                          shadowOffset: { width: 0, height: 0 },
-                          shadowOpacity: 0.6,
-                          shadowRadius: 8,
-                        }
-                      ]}
-                    >
-                      <Ionicons name="receipt-outline" size={14} color="#FFF" />
-                      {pendingOrderCounts[customer.user_id] > 1 && (
-                        <View style={styles.orderCountBadge}>
-                          <Text style={styles.orderCountText}>
-                            {pendingOrderCounts[customer.user_id]}
-                          </Text>
-                        </View>
-                      )}
-                    </Animated.View>
-                  )}
+                  {/* Real-Time Order Status Indicator */}
+                  <View style={styles.statusIndicatorWrapper}>
+                    <OrderStatusIndicator 
+                      status={customerOrderStatus[customer.user_id]?.status || 'no_active_order'}
+                      activeOrderCount={customerOrderStatus[customer.user_id]?.activeCount || 0}
+                      size={24}
+                    />
+                  </View>
 
                   {/* Quick Actions */}
                   <TouchableOpacity 
