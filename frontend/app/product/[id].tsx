@@ -627,9 +627,12 @@ export default function ProductDetailScreen() {
         onPress={handleAddToCart}
         isLoading={addingToCart}
         price={product.price}
+        quantity={quantity}
+        onQuantityChange={setQuantity}
         label={t('addToCart')}
         colors={colors}
         language={language}
+        isRTL={isRTL}
       />
     </KeyboardAvoidingView>
   );
