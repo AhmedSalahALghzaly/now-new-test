@@ -184,12 +184,53 @@ export default function HomeScreen() {
       router.push('/login');
       return;
     }
+    
+    // Set loading state
+    setCartLoadingStates(prev => ({ ...prev, [product.id]: true }));
+    
     try {
       await cartApi.addItem(product.id, quantity);
       addToLocalCart({ product_id: product.id, quantity: quantity, product });
+      
+      // Show success state
+      setAddedToCartStates(prev => ({ ...prev, [product.id]: true }));
+      
+      // Reset quantity after adding
+      setProductQuantities(prev => ({ ...prev, [product.id]: 1 }));
+      
+      // Reset success state after animation
+      setTimeout(() => {
+        setAddedToCartStates(prev => ({ ...prev, [product.id]: false }));
+      }, 1500);
     } catch (error) {
       console.error('Error adding to cart:', error);
+    } finally {
+      setCartLoadingStates(prev => ({ ...prev, [product.id]: false }));
     }
+  };
+
+  // Quantity handlers
+  const handleIncreaseQuantity = (productId: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setProductQuantities(prev => ({
+      ...prev,
+      [productId]: (prev[productId] || 1) + 1
+    }));
+  };
+
+  const handleDecreaseQuantity = (productId: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setProductQuantities(prev => {
+      const current = prev[productId] || 1;
+      if (current > 1) {
+        return { ...prev, [productId]: current - 1 };
+      }
+      return prev;
+    });
+  };
+
+  const getProductQuantity = (productId: string) => {
+    return productQuantities[productId] || 1;
   };
 
   const handleToggleFavorite = async (productId: string) => {
