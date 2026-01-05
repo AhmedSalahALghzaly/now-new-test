@@ -535,6 +535,11 @@ export default function HomeScreen() {
             >
               {filteredProducts.map((product) => {
                 const isFavorite = favorites.has(product.id);
+                const quantity = getProductQuantity(product.id);
+                const totalPrice = product.price * quantity;
+                const isLoading = cartLoadingStates[product.id] || false;
+                const isAddedToCart = addedToCartStates[product.id] || false;
+                
                 return (
                   <TouchableOpacity
                     key={product.id}
@@ -560,50 +565,83 @@ export default function HomeScreen() {
                       <Text style={[styles.productName, { color: colors.text }]} numberOfLines={2}>
                         {getName(product)}
                       </Text>
-                      {product.sku && (
-                        <Text style={[styles.productSku, { color: colors.textSecondary }]}>
-                          SKU: {product.sku}
-                        </Text>
-                      )}
-                      {/* Footer with Favorites button, Price, and Add to Cart button */}
-                      <View style={styles.productFooter}>
-                        {/* Favorites Button - Left */}
+                      
+                      {/* Quantity Selector Row */}
+                      <View style={[styles.quantityRow, isRTL && styles.quantityRowRTL]}>
+                        {/* Minus Button */}
                         <TouchableOpacity
-                          style={[
-                            styles.productActionBtn, 
-                            { 
-                              backgroundColor: isFavorite ? colors.error : colors.surface,
-                              borderColor: isFavorite ? colors.error : colors.border,
-                              borderWidth: 1,
-                            }
-                          ]}
                           onPress={(e) => {
                             e.stopPropagation();
-                            handleToggleFavorite(product.id);
+                            handleDecreaseQuantity(product.id);
                           }}
+                          style={[
+                            styles.quantityButton,
+                            { 
+                              backgroundColor: quantity > 1 ? colors.primary + '20' : colors.surface,
+                              borderColor: quantity > 1 ? colors.primary : colors.border,
+                            },
+                          ]}
+                          disabled={quantity <= 1}
                         >
                           <Ionicons 
-                            name={isFavorite ? "heart" : "heart-outline"} 
-                            size={16} 
-                            color={isFavorite ? "#FFF" : colors.error} 
+                            name="remove" 
+                            size={12} 
+                            color={quantity > 1 ? colors.primary : colors.textSecondary} 
                           />
                         </TouchableOpacity>
                         
-                        {/* Price - Center */}
-                        <Text style={[styles.productPrice, { color: colors.primary }]}>
-                          {product.price?.toFixed(2)} ج.م
-                        </Text>
+                        {/* Quantity Display */}
+                        <View
+                          style={[
+                            styles.quantityBadge,
+                            { backgroundColor: colors.primary },
+                          ]}
+                        >
+                          <Text style={styles.quantityText}>{quantity}</Text>
+                        </View>
                         
-                        {/* Add to Cart Button - Right */}
+                        {/* Plus Button */}
                         <TouchableOpacity
-                          style={[styles.productActionBtn, { backgroundColor: colors.primary }]}
                           onPress={(e) => {
                             e.stopPropagation();
-                            handleAddToCart(product);
+                            handleIncreaseQuantity(product.id);
                           }}
+                          style={[
+                            styles.quantityButton,
+                            { 
+                              backgroundColor: colors.primary + '20',
+                              borderColor: colors.primary,
+                            },
+                          ]}
                         >
-                          <Ionicons name="add" size={16} color="#FFF" />
+                          <Ionicons name="add" size={12} color={colors.primary} />
                         </TouchableOpacity>
+                      </View>
+                      
+                      {/* Footer with Favorites button, Dynamic Price, and Add to Cart button */}
+                      <View style={styles.productFooter}>
+                        {/* Animated Favorites Button - Left */}
+                        <AnimatedFavoriteButton
+                          isFavorite={isFavorite}
+                          onPress={() => handleToggleFavorite(product.id)}
+                          size={14}
+                          style={styles.productActionBtn}
+                        />
+                        
+                        {/* Dynamic Price - Center */}
+                        <Text style={[styles.productPrice, { color: colors.primary }]}>
+                          {totalPrice?.toFixed(2)} ج.م
+                        </Text>
+                        
+                        {/* Animated Add to Cart Button - Right */}
+                        <AnimatedCartButton
+                          isInCart={isAddedToCart}
+                          isLoading={isLoading}
+                          onPress={() => handleAddToCart(product, quantity)}
+                          size={14}
+                          primaryColor={colors.primary}
+                          style={styles.productActionBtn}
+                        />
                       </View>
                     </View>
                   </TouchableOpacity>
