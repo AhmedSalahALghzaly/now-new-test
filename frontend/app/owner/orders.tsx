@@ -146,7 +146,7 @@ export default function OrdersScreen() {
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top }]}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => {}} tintColor="#FFF" />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FFF" />}
       >
         {/* Header */}
         <View style={[styles.header, isRTL && styles.headerRTL]}>
