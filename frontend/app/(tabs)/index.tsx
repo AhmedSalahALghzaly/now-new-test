@@ -481,24 +481,15 @@ export default function HomeScreen() {
             contentContainerStyle={styles.horizontalScroll}
           >
             {productBrands.map((brand) => (
-              <TouchableOpacity
+              <AnimatedBrandCard
                 key={brand.id}
-                style={[
-                  styles.productBrandCard,
-                  { backgroundColor: colors.card, borderColor: colors.border },
-                ]}
+                brand={{
+                  ...brand,
+                  country_of_origin: brand.country_of_origin || 'Japan', // Default to Japan for auto parts brands
+                }}
+                type="product"
                 onPress={() => router.push(`/search?product_brand_id=${brand.id}`)}
-              >
-                <View style={[styles.productBrandIcon, { backgroundColor: colors.secondary + '15' }]}>
-                  <Ionicons name="pricetag" size={28} color={colors.secondary} />
-                </View>
-                <Text style={[styles.productBrandName, { color: colors.text }]}>
-                  {brand.name}
-                </Text>
-                <Text style={[styles.productBrandCount, { color: colors.textSecondary }]}>
-                  {language === 'ar' ? 'عرض المنتجات' : 'View Products'}
-                </Text>
-              </TouchableOpacity>
+              />
             ))}
           </ScrollView>
         </View>
