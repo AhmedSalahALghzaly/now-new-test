@@ -443,15 +443,18 @@ frontend:
 
   - task: "Car Model GetById Endpoint Fix"
     implemented: true
-    working: "NA"
+    working: true
     file: "backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Fixed GET /car-models/{model_id} endpoint. Updated to use car_brand_id field (instead of brand_id) and compatible_car_models field (instead of car_model_ids) for proper product matching."
+      - working: true
+        agent: "testing"
+        comment: "✅ Car Model GetById endpoint tested successfully. GET /api/car-models/cm_corolla returns complete model data with brand info populated. Model 'Corolla' has brand 'Toyota' and 5 compatible products. All required fields present (name, brand, compatible_products)."
 
 metadata:
   created_by: "main_agent"
