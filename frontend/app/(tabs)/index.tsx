@@ -21,6 +21,8 @@ import { OfferSlider } from '../../src/components/OfferSlider';
 import { DynamicOfferSlider } from '../../src/components/DynamicOfferSlider';
 import { InteractiveCarSelector } from '../../src/components/InteractiveCarSelector';
 import { AnimatedFavoriteButton, AnimatedCartButton } from '../../src/components/AnimatedIconButton';
+import { AnimatedBrandCard } from '../../src/components/AnimatedBrandCard';
+import { ProductCard } from '../../src/components/ProductCard';
 import { useTheme } from '../../src/hooks/useTheme';
 import { useTranslation } from '../../src/hooks/useTranslation';
 import { useAppStore } from '../../src/store/appStore';
@@ -31,6 +33,9 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
+// Home screen product card width: 10% increase from 150 = 165
+const HOME_PRODUCT_CARD_WIDTH = 165;
 
 export default function HomeScreen() {
   const { colors } = useTheme();
