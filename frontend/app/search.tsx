@@ -488,11 +488,24 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  flashListContainer: {
+    flex: 1,
+  },
   listContent: {
-    padding: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+  },
+  cardWrapper: {
+    flex: 1,
+    alignItems: 'center',
   },
   row: {
     justifyContent: 'flex-start',
+  },
+  noModelsText: {
+    fontSize: 12,
+    fontStyle: 'italic',
+    marginTop: 8,
   },
   resultsCount: {
     fontSize: 14,
