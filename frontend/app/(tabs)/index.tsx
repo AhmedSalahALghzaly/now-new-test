@@ -517,120 +517,14 @@ export default function HomeScreen() {
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.horizontalScroll}
             >
-              {filteredProducts.map((product) => {
-                const isFavorite = favorites.has(product.id);
-                const quantity = getProductQuantity(product.id);
-                const totalPrice = product.price * quantity;
-                const isLoading = cartLoadingStates[product.id] || false;
-                const isAddedToCart = addedToCartStates[product.id] || false;
-                
-                return (
-                  <TouchableOpacity
-                    key={product.id}
-                    style={[
-                      styles.productCard,
-                      { backgroundColor: colors.card, borderColor: colors.border },
-                    ]}
-                    onPress={() => router.push(`/product/${product.id}`)}
-                    activeOpacity={0.7}
-                  >
-                    <View style={[styles.productImageContainer, { backgroundColor: colors.surface }]}>
-                      {product.image_url ? (
-                        <Image
-                          source={{ uri: product.image_url }}
-                          style={styles.productImage}
-                          resizeMode="cover"
-                        />
-                      ) : (
-                        <Ionicons name="cube-outline" size={40} color={colors.textSecondary} />
-                      )}
-                    </View>
-                    <View style={styles.productInfo}>
-                      <Text style={[styles.productName, { color: colors.text }]} numberOfLines={2}>
-                        {getName(product)}
-                      </Text>
-                      
-                      {/* Quantity Selector Row */}
-                      <View style={[styles.quantityRow, isRTL && styles.quantityRowRTL]}>
-                        {/* Minus Button */}
-                        <TouchableOpacity
-                          onPress={(e) => {
-                            e.stopPropagation();
-                            handleDecreaseQuantity(product.id);
-                          }}
-                          style={[
-                            styles.quantityButton,
-                            { 
-                              backgroundColor: quantity > 1 ? colors.primary + '20' : colors.surface,
-                              borderColor: quantity > 1 ? colors.primary : colors.border,
-                            },
-                          ]}
-                          disabled={quantity <= 1}
-                        >
-                          <Ionicons 
-                            name="remove" 
-                            size={12} 
-                            color={quantity > 1 ? colors.primary : colors.textSecondary} 
-                          />
-                        </TouchableOpacity>
-                        
-                        {/* Quantity Display */}
-                        <View
-                          style={[
-                            styles.quantityBadge,
-                            { backgroundColor: colors.primary },
-                          ]}
-                        >
-                          <Text style={styles.quantityText}>{quantity}</Text>
-                        </View>
-                        
-                        {/* Plus Button */}
-                        <TouchableOpacity
-                          onPress={(e) => {
-                            e.stopPropagation();
-                            handleIncreaseQuantity(product.id);
-                          }}
-                          style={[
-                            styles.quantityButton,
-                            { 
-                              backgroundColor: colors.primary + '20',
-                              borderColor: colors.primary,
-                            },
-                          ]}
-                        >
-                          <Ionicons name="add" size={12} color={colors.primary} />
-                        </TouchableOpacity>
-                      </View>
-                      
-                      {/* Footer with Favorites button, Dynamic Price, and Add to Cart button */}
-                      <View style={styles.productFooter}>
-                        {/* Animated Favorites Button - Left */}
-                        <AnimatedFavoriteButton
-                          isFavorite={isFavorite}
-                          onPress={() => handleToggleFavorite(product.id)}
-                          size={14}
-                          style={styles.productActionBtn}
-                        />
-                        
-                        {/* Dynamic Price - Center */}
-                        <Text style={[styles.productPrice, { color: colors.primary }]}>
-                          {totalPrice?.toFixed(2)} ج.م
-                        </Text>
-                        
-                        {/* Animated Add to Cart Button - Right */}
-                        <AnimatedCartButton
-                          isInCart={isAddedToCart}
-                          isLoading={isLoading}
-                          onPress={() => handleAddToCart(product, quantity)}
-                          size={14}
-                          primaryColor={colors.primary}
-                          style={styles.productActionBtn}
-                        />
-                      </View>
-                    </View>
-                  </TouchableOpacity>
-                );
-              })}
+              {filteredProducts.map((product) => (
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  cardWidth={HOME_PRODUCT_CARD_WIDTH}
+                  onAddToCart={(quantity) => handleAddToCart(product, quantity)}
+                />
+              ))}
             </ScrollView>
           </View>
         )}
