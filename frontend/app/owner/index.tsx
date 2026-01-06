@@ -131,9 +131,16 @@ export default function OwnerDashboard() {
     try {
       const response = await adminApi.getAll();
       const allAdmins = response.data || [];
-      // Filter to get partners (role = 'partner') and owner
-      const partnersList = allAdmins.filter((a: any) => a.role === 'partner' || a.role === 'owner');
-      setPartners(partnersList);
+      // Filter to get confirmed partners (with email_confirmed = true) and owner
+      const confirmedPartners = allAdmins.filter((a: any) => 
+        (a.role === 'partner' && a.email_confirmed === true) || a.role === 'owner'
+      );
+      // Filter pending partners (email not confirmed yet)
+      const pending = allAdmins.filter((a: any) => 
+        a.role === 'partner' && a.email_confirmed !== true
+      );
+      setPartners(confirmedPartners);
+      setPendingPartners(pending);
     } catch (error) {
       console.error('Error fetching partners:', error);
     } finally {
