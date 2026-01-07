@@ -36,6 +36,7 @@ interface CartState {
   // Actions
   addToCart: (item: CartItemData | string, quantity?: number) => void;
   addToLocalCart: (item: { product_id: string; quantity: number; product?: any }) => void;
+  addBundleToCart: (bundleOffer: BundleOfferData, products: any[]) => Promise<void>;
   updateCartItem: (productId: string, quantity: number) => void;
   removeFromCart: (productId: string, voidBundle?: boolean) => void;
   clearCart: () => void;
