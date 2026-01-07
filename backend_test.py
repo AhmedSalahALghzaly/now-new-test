@@ -247,6 +247,60 @@ class BackendTester:
             self.log_test("Marketing Home Slider Test", False, f"Error: {str(e)}")
             return False
     
+    def test_admin_check_access_without_auth(self):
+        """Test GET /admins/check-access without authentication (Bug Fix #3)"""
+        try:
+            response = self.session.get(f"{BASE_URL}/admins/check-access")
+            
+            if response.status_code == 401:
+                data = response.json()
+                detail = data.get("detail", "")
+                if "Not authenticated" in detail:
+                    self.log_test("GET /admins/check-access (no auth)", True, 
+                                f"Correctly returned 401: {detail}")
+                else:
+                    self.log_test("GET /admins/check-access (no auth)", False, 
+                                f"Wrong error message: {detail}")
+            else:
+                self.log_test("GET /admins/check-access (no auth)", False, 
+                            f"Expected 401, got {response.status_code}")
+                
+            return True
+        except Exception as e:
+            self.log_test("Admin Check Access Without Auth", False, f"Error: {str(e)}")
+            return False
+    
+    def test_cart_add_with_bundle_params(self):
+        """Test POST /cart/add with bundle parameters (Bug Fix #1)"""
+        try:
+            bundle_data = {
+                "product_id": "test_product_123",
+                "quantity": 1,
+                "bundle_group_id": "test_bundle_group_456",
+                "bundle_offer_id": "test_bundle_offer_789",
+                "bundle_discount_percentage": 15.0
+            }
+            
+            response = self.session.post(f"{BASE_URL}/cart/add", json=bundle_data)
+            
+            if response.status_code == 401:
+                data = response.json()
+                detail = data.get("detail", "")
+                if "Not authenticated" in detail:
+                    self.log_test("POST /cart/add with bundle params (no auth)", True, 
+                                f"Correctly returned 401: {detail}")
+                else:
+                    self.log_test("POST /cart/add with bundle params (no auth)", False, 
+                                f"Wrong error message: {detail}")
+            else:
+                self.log_test("POST /cart/add with bundle params (no auth)", False, 
+                            f"Expected 401, got {response.status_code}")
+                
+            return True
+        except Exception as e:
+            self.log_test("Cart Add Bundle Params Test", False, f"Error: {str(e)}")
+            return False
+    
     def run_all_tests(self):
         """Run all backend tests"""
         print("🚀 Starting Backend API Tests for Al-Ghazaly Auto Parts")
