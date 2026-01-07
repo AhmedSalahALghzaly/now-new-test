@@ -15,6 +15,41 @@ export const api = axios.create({
   withCredentials: true,
 });
 
+// Token storage for authorization header
+let authToken: string | null = null;
+
+// Function to set auth token (called from auth store)
+export const setApiAuthToken = (token: string | null) => {
+  authToken = token;
+};
+
+// Request interceptor to add authorization header
+api.interceptors.request.use(
+  (config) => {
+    if (authToken) {
+      config.headers.Authorization = `Bearer ${authToken}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Response interceptor for error handling
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // Log errors for debugging
+    if (error.response?.status === 401) {
+      console.log('API: Unauthorized request - user may need to login');
+    } else if (error.response?.status === 403) {
+      console.log('API: Access denied - insufficient permissions');
+    }
+    return Promise.reject(error);
+  }
+);
+
 // Auth APIs
 export const authApi = {
   exchangeSession: (sessionId: string) => api.post('/auth/session', { session_id: sessionId }),
