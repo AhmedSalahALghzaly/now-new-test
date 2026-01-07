@@ -470,6 +470,21 @@ async def delete_partner(partner_id: str, request: Request):
 
 # ==================== Admin Routes ====================
 
+@api_router.get("/admins/check-access")
+async def check_admin_access(request: Request):
+    """
+    Bug Fix #3: Returns a list of admin emails for access control checks.
+    This allows any authenticated user to verify if they are an admin.
+    Only returns email addresses, not full admin data.
+    """
+    user = await get_current_user(request)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    admins = await db.admins.find({"deleted_at": None}).to_list(1000)
+    # Return just the essential info for access checking
+    return [{"id": a["_id"], "email": a.get("email", "")} for a in admins]
+
 @api_router.get("/admins")
 async def get_admins(request: Request):
     user = await get_current_user(request)
