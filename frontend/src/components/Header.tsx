@@ -93,6 +93,9 @@ export const Header: React.FC<HeaderProps> = ({
               style={styles.logoImage}
               resizeMode="contain"
             />
+            <Text style={[styles.brandText, { color: headerTextColor }]}>
+              {isRTL ? 'الغزالي لقطع الغيار' : 'Al-Ghazaly Auto Parts'}
+            </Text>
           </TouchableOpacity>
         )}
 
