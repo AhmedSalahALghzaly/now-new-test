@@ -218,13 +218,13 @@ const styles = StyleSheet.create({
   logoSection: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 5,
   },
   logoSectionRTL: {
     flexDirection: 'row-reverse',
   },
   logoImage: {
-    width: 59,
+    width: 70,
     height: 50,
   },
   brandText: {
