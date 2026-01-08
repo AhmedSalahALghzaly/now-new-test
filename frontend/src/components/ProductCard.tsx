@@ -32,7 +32,7 @@ interface ProductCardProps {
   showDetails?: boolean; // Optional prop to show/hide extra details (default: true)
 }
 
-export const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart, cardWidth }) => {
+export const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart, cardWidth, showDetails = true }) => {
   const { colors } = useTheme();
   const { t, language, isRTL } = useTranslation();
   const router = useRouter();
