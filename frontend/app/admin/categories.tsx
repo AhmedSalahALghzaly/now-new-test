@@ -248,10 +248,15 @@ export default function CategoriesAdmin() {
           ) : (
             categories.map((category) => {
               const parent = category.parent_id ? categories.find(c => c.id === category.parent_id) : null;
+              const hasImage = category.image_data && category.image_data.length > 0;
               return (
                 <View key={category.id} style={[styles.listItem, { borderColor: colors.border }]}>
-                  <View style={[styles.categoryIcon, { backgroundColor: colors.primary + '20' }]}>
-                    <Ionicons name={(category.icon || 'grid') as any} size={20} color={colors.primary} />
+                  <View style={[styles.categoryIcon, { backgroundColor: hasImage ? 'transparent' : colors.primary + '20', overflow: 'hidden' }]}>
+                    {hasImage ? (
+                      <Image source={{ uri: category.image_data }} style={styles.categoryImage} resizeMode="cover" />
+                    ) : (
+                      <Ionicons name={(category.icon || 'grid') as any} size={20} color={colors.primary} />
+                    )}
                   </View>
                   <View style={styles.categoryInfo}>
                     <Text style={[styles.categoryName, { color: colors.text }]}>{category.name}</Text>
