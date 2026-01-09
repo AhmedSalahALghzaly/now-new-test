@@ -58,6 +58,19 @@ export const authApi = {
   exchangeSession: (sessionId: string) => api.post('/auth/session', { session_id: sessionId }),
   getMe: () => api.get('/auth/me'),
   logout: () => api.post('/auth/logout'),
+  // التحقق من صلاحية الـ Token
+  validateToken: async (): Promise<{ valid: boolean; user?: any }> => {
+    try {
+      const response = await api.get('/auth/me');
+      return { valid: true, user: response.data };
+    } catch (error: any) {
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        return { valid: false };
+      }
+      // في حالة خطأ آخر (مثل عدم الاتصال)، نفترض أن الـ token صالح
+      return { valid: true };
+    }
+  },
 };
 
 // Car Brand APIs
