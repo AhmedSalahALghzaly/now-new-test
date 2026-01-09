@@ -594,6 +594,12 @@ export const useAppStore = create<AppState>()(
           if (state.sessionToken) {
             setApiAuthToken(state.sessionToken);
             console.log('Session token restored from storage');
+            // التحقق من صلاحية الـ token في الخلفية
+            setTimeout(() => {
+              state.validateSession().then((isValid) => {
+                console.log('Session validation result:', isValid);
+              });
+            }, 1000); // انتظار ثانية للتأكد من تحميل التطبيق
           }
         }
       },
