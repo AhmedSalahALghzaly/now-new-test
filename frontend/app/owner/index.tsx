@@ -734,6 +734,12 @@ export default function OwnerDashboard() {
 
       {/* Confetti Effect for successful partner addition */}
       <ConfettiEffect active={showConfetti} onComplete={() => setShowConfetti(false)} />
+
+      {/* Global Search Modal */}
+      <GlobalSearch 
+        visible={showGlobalSearch} 
+        onClose={() => setShowGlobalSearch(false)} 
+      />
     </View>
   );
 }
