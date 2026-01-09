@@ -150,7 +150,12 @@ export default function ProfileScreen() {
           { backgroundColor: colors.card, borderColor: colors.border }
         ]}>
           {user.picture ? (
-            <Image source={{ uri: user.picture }} style={styles.avatar} />
+            <Image 
+              source={{ uri: user.picture }} 
+              style={styles.avatar}
+              contentFit="cover"
+              cachePolicy="disk"
+            />
           ) : (
             <View style={[styles.avatarPlaceholder, { backgroundColor: colors.surface }]}>
               <Text style={[styles.avatarText, { color: colors.primary }]}>
