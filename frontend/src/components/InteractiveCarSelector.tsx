@@ -3,7 +3,7 @@
  * Features: Morphing car icon, haptic feedback, SVG brand icons,
  * 5x2 grid layout, floating products panel with filters
  */
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -12,11 +12,10 @@ import {
   Dimensions,
   ScrollView,
   TextInput,
-  Image,
   FlatList,
-  ActivityIndicator,
   Platform,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
