@@ -97,7 +97,9 @@ export const CategoryCard: React.FC<CategoryCardProps> = ({ category, size = 'me
               height: containerSize,
               borderRadius: containerSize / 2,
             }}
-            resizeMode="cover"
+            contentFit="cover"
+            cachePolicy="disk"
+            transition={200}
           />
         ) : (
           <MaterialCommunityIcons
