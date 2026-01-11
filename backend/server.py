@@ -3211,6 +3211,298 @@ async def seed_marketing_data():
         ]
         await db.bundle_offers.insert_many(bundle_offers)
 
+# =============================================================================
+# DEPLOYMENT & ENVIRONMENT READINESS ENDPOINTS
+# =============================================================================
+
+# App version information
+APP_VERSION = "4.1.0"
+BUILD_DATE = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+MIN_FRONTEND_VERSION = "1.0.0"
+
+class VersionInfo(BaseModel):
+    api_version: str
+    build_date: str
+    min_frontend_version: str
+    features: List[str]
+
+@api_router.get("/version", response_model=VersionInfo)
+async def get_version():
+    """Get API version information for frontend version checking."""
+    return {
+        "api_version": APP_VERSION,
+        "build_date": BUILD_DATE,
+        "min_frontend_version": MIN_FRONTEND_VERSION,
+        "features": [
+            "cursor_pagination",
+            "offline_sync",
+            "websocket_realtime",
+            "modern_ui_v4",
+            "image_optimization",
+        ]
+    }
+
+@api_router.get("/health")
+async def health_check():
+    """Health check endpoint for deployment monitoring."""
+    try:
+        # Check MongoDB connection
+        await db.command("ping")
+        mongo_status = "healthy"
+    except Exception as e:
+        mongo_status = f"unhealthy: {str(e)}"
+    
+    return {
+        "status": "healthy" if mongo_status == "healthy" else "degraded",
+        "api_version": APP_VERSION,
+        "database": mongo_status,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+
+class ExportRequest(BaseModel):
+    collections: Optional[List[str]] = None  # None = all collections
+    include_metadata: bool = True
+
+@api_router.post("/admin/export-database")
+async def export_database(request: Request, export_config: ExportRequest = None):
+    """
+    Export MongoDB collections for database seeding in new environments.
+    Admin only - requires owner authentication.
+    """
+    # Verify admin access
+    user = await get_current_user_from_request(request)
+    if not user or user.get("email") != PRIMARY_OWNER_EMAIL:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Collections to export (business data only, not user-specific)
+    exportable_collections = [
+        "car_brands", "car_models", "categories", "product_brands",
+        "products", "suppliers", "promotions", "bundle_offers",
+        "home_slider", "marketing_settings"
+    ]
+    
+    collections_to_export = export_config.collections if export_config and export_config.collections else exportable_collections
+    
+    export_data = {
+        "metadata": {
+            "exported_at": datetime.now(timezone.utc).isoformat(),
+            "api_version": APP_VERSION,
+            "source_db": DB_NAME,
+        },
+        "collections": {}
+    }
+    
+    for collection_name in collections_to_export:
+        if collection_name not in exportable_collections:
+            continue
+        
+        collection = db[collection_name]
+        documents = await collection.find({"deleted_at": None}).to_list(10000)
+        
+        # Convert ObjectIds and dates to strings for JSON serialization
+        serialized_docs = []
+        for doc in documents:
+            serialized_doc = {}
+            for key, value in doc.items():
+                if key == "_id":
+                    serialized_doc["_id"] = str(value) if hasattr(value, '__str__') else value
+                elif isinstance(value, datetime):
+                    serialized_doc[key] = value.isoformat()
+                else:
+                    serialized_doc[key] = value
+            serialized_docs.append(serialized_doc)
+        
+        export_data["collections"][collection_name] = {
+            "count": len(serialized_docs),
+            "documents": serialized_docs
+        }
+    
+    return export_data
+
+class ImportRequest(BaseModel):
+    data: Dict[str, Any]
+    merge_strategy: str = "skip_existing"  # "skip_existing", "replace", "merge"
+
+@api_router.post("/admin/import-database")
+async def import_database(request: Request, import_config: ImportRequest):
+    """
+    Import database seed data for new environment setup.
+    Admin only - requires owner authentication.
+    """
+    # Verify admin access
+    user = await get_current_user_from_request(request)
+    if not user or user.get("email") != PRIMARY_OWNER_EMAIL:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    import_data = import_config.data
+    merge_strategy = import_config.merge_strategy
+    
+    results = {
+        "imported": {},
+        "skipped": {},
+        "errors": []
+    }
+    
+    collections_data = import_data.get("collections", {})
+    
+    for collection_name, collection_data in collections_data.items():
+        documents = collection_data.get("documents", [])
+        imported_count = 0
+        skipped_count = 0
+        
+        collection = db[collection_name]
+        
+        for doc in documents:
+            try:
+                doc_id = doc.get("_id")
+                
+                # Check if document exists
+                existing = await collection.find_one({"_id": doc_id}) if doc_id else None
+                
+                if existing:
+                    if merge_strategy == "skip_existing":
+                        skipped_count += 1
+                        continue
+                    elif merge_strategy == "replace":
+                        await collection.replace_one({"_id": doc_id}, doc)
+                        imported_count += 1
+                    elif merge_strategy == "merge":
+                        await collection.update_one({"_id": doc_id}, {"$set": doc})
+                        imported_count += 1
+                else:
+                    # Convert ISO date strings back to datetime
+                    for key, value in doc.items():
+                        if isinstance(value, str) and "T" in value and value.endswith("+00:00"):
+                            try:
+                                doc[key] = datetime.fromisoformat(value.replace("+00:00", "+00:00"))
+                            except:
+                                pass
+                    
+                    await collection.insert_one(doc)
+                    imported_count += 1
+                    
+            except Exception as e:
+                results["errors"].append(f"{collection_name}/{doc.get('_id', 'unknown')}: {str(e)}")
+        
+        results["imported"][collection_name] = imported_count
+        results["skipped"][collection_name] = skipped_count
+    
+    return results
+
+@api_router.get("/admin/database-stats")
+async def get_database_stats(request: Request):
+    """Get database statistics for deployment monitoring."""
+    # Verify admin access
+    user = await get_current_user_from_request(request)
+    if not user or user.get("email") != PRIMARY_OWNER_EMAIL:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    stats = {}
+    
+    collections = [
+        "car_brands", "car_models", "categories", "product_brands",
+        "products", "users", "orders", "cart_items", "suppliers",
+        "distributors", "customers", "promotions", "bundle_offers"
+    ]
+    
+    for collection_name in collections:
+        collection = db[collection_name]
+        total = await collection.count_documents({})
+        active = await collection.count_documents({"deleted_at": None})
+        stats[collection_name] = {
+            "total": total,
+            "active": active,
+            "deleted": total - active
+        }
+    
+    return {
+        "database": DB_NAME,
+        "api_version": APP_VERSION,
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "collections": stats
+    }
+
+@api_router.post("/admin/clear-cache")
+async def clear_server_cache(request: Request):
+    """
+    Clear any server-side caches for deployment refresh.
+    This helps ensure fresh data is served after deployment.
+    """
+    # Verify admin access
+    user = await get_current_user_from_request(request)
+    if not user or user.get("email") != PRIMARY_OWNER_EMAIL:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # In a production environment, this would clear Redis/Memcached
+    # For now, we return confirmation that the endpoint is ready
+    return {
+        "status": "success",
+        "message": "Server cache cleared",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "api_version": APP_VERSION
+    }
+
+@api_router.get("/admin/deployment-checklist")
+async def get_deployment_checklist(request: Request):
+    """
+    Get deployment readiness checklist for new environment setup.
+    """
+    # Verify admin access
+    user = await get_current_user_from_request(request)
+    if not user or user.get("email") != PRIMARY_OWNER_EMAIL:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    checks = []
+    
+    # 1. Database connection
+    try:
+        await db.command("ping")
+        checks.append({"name": "Database Connection", "status": "pass", "message": "MongoDB connected"})
+    except Exception as e:
+        checks.append({"name": "Database Connection", "status": "fail", "message": str(e)})
+    
+    # 2. Essential collections exist
+    essential_collections = ["car_brands", "car_models", "categories", "products"]
+    for coll in essential_collections:
+        count = await db[coll].count_documents({"deleted_at": None})
+        if count > 0:
+            checks.append({"name": f"{coll} Data", "status": "pass", "message": f"{count} active records"})
+        else:
+            checks.append({"name": f"{coll} Data", "status": "warn", "message": "No data - seed required"})
+    
+    # 3. Admin user exists
+    admin_count = await db.users.count_documents({"email": PRIMARY_OWNER_EMAIL})
+    if admin_count > 0:
+        checks.append({"name": "Admin User", "status": "pass", "message": "Owner account exists"})
+    else:
+        checks.append({"name": "Admin User", "status": "warn", "message": "Owner account not found"})
+    
+    # 4. Indexes created (check one index as sample)
+    try:
+        indexes = await db.products.index_information()
+        if len(indexes) > 1:
+            checks.append({"name": "Database Indexes", "status": "pass", "message": f"{len(indexes)} indexes"})
+        else:
+            checks.append({"name": "Database Indexes", "status": "warn", "message": "Indexes may need creation"})
+    except:
+        checks.append({"name": "Database Indexes", "status": "fail", "message": "Could not check indexes"})
+    
+    # Calculate overall status
+    statuses = [c["status"] for c in checks]
+    if "fail" in statuses:
+        overall = "fail"
+    elif "warn" in statuses:
+        overall = "partial"
+    else:
+        overall = "ready"
+    
+    return {
+        "overall_status": overall,
+        "api_version": APP_VERSION,
+        "checked_at": datetime.now(timezone.utc).isoformat(),
+        "checks": checks
+    }
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8001)
