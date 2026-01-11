@@ -114,40 +114,71 @@ export default function ProductsAdmin() {
     setSaving(true);
     setError('');
 
-    try {
-      const productData = {
-        name: name.trim(),
-        name_ar: nameAr.trim(),
-        description: description.trim() || null,
-        description_ar: descriptionAr.trim() || null,
-        price: parseFloat(price),
-        sku: sku.trim(),
-        image_url: images.length > 0 ? images[0] : null,
-        images: images,
-        product_brand_id: selectedBrandId,
-        category_id: selectedCategoryId,
-        car_model_ids: selectedCarModelIds,
-        stock_quantity: parseInt(stockQuantity) || 0,
-      };
+    const productData = {
+      name: name.trim(),
+      name_ar: nameAr.trim(),
+      description: description.trim() || null,
+      description_ar: descriptionAr.trim() || null,
+      price: parseFloat(price),
+      sku: sku.trim(),
+      image_url: images.length > 0 ? images[0] : null,
+      images: images,
+      product_brand_id: selectedBrandId,
+      category_id: selectedCategoryId,
+      car_model_ids: selectedCarModelIds,
+      stock_quantity: parseInt(stockQuantity) || 0,
+    };
 
+    try {
+      let result;
+      
       if (isEditMode && editingProduct) {
-        // Update existing product
-        await productsApi.update(editingProduct.id, productData);
+        // Update existing product with optimistic update
+        result = await adminSync.updateProduct(editingProduct.id, productData);
+        
+        if (result.success) {
+          // Update local state immediately (already done in adminSync)
+          setProducts(prev => prev.map(p => 
+            p.id === editingProduct.id ? { ...p, ...productData, ...result.data } : p
+          ));
+          showToast(language === 'ar' ? 'تم تحديث المنتج بنجاح' : 'Product updated successfully', 'success');
+        } else {
+          setError(result.error || 'Failed to update product');
+          showToast(result.error || 'Failed to update product', 'error');
+        }
       } else {
-        // Create new product
-        await productsApi.create(productData);
+        // Create new product with optimistic update
+        result = await adminSync.createProduct(productData);
+        
+        if (result.success) {
+          // Product already added to store optimistically
+          // Refresh to get the server ID
+          const productsRes = await productsApi.getAllAdmin();
+          setProducts(productsRes.data?.products || []);
+          showToast(language === 'ar' ? 'تم إضافة المنتج بنجاح' : 'Product created successfully', 'success');
+        } else {
+          setError(result.error || 'Failed to create product');
+          showToast(result.error || 'Failed to create product', 'error');
+        }
       }
 
-      setShowSuccess(true);
-      resetForm();
-      fetchData();
-
-      setTimeout(() => setShowSuccess(false), 2000);
+      if (result.success) {
+        setShowSuccess(true);
+        resetForm();
+        setTimeout(() => setShowSuccess(false), 2000);
+      }
     } catch (error: any) {
       setError(error.response?.data?.detail || (isEditMode ? 'Error updating product' : 'Error saving product'));
+      showToast(error.response?.data?.detail || 'Operation failed', 'error');
     } finally {
       setSaving(false);
     }
+  };
+
+  const showToast = (message: string, type: 'success' | 'error' | 'warning' | 'info') => {
+    setToastMessage(message);
+    setToastType(type);
+    setToastVisible(true);
   };
 
   const resetForm = () => {
