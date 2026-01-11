@@ -67,24 +67,33 @@ export default function CategoriesAdmin() {
     setSaving(true);
     setError('');
 
+    const categoryData = {
+      name: name.trim(),
+      name_ar: nameAr.trim(),
+      parent_id: parentId,
+      icon: icon.trim() || null,
+      image_data: categoryImage || null,
+    };
+
     console.log('Saving category with image_data:', categoryImage ? 'HAS IMAGE' : 'NO IMAGE');
 
     try {
-      await categoriesApi.create({
-        name: name.trim(),
-        name_ar: nameAr.trim(),
-        parent_id: parentId,
-        icon: icon.trim() || null,
-        image_data: categoryImage || null,
-      });
-
-      showToast(language === 'ar' ? 'تم حفظ الفئة بنجاح' : 'Category saved successfully', 'success');
-      setName('');
-      setNameAr('');
-      setParentId(null);
-      setIcon('');
-      setCategoryImage('');
-      fetchCategories();
+      // Use optimistic update via AdminSyncService
+      const result = await adminSync.createCategory(categoryData);
+      
+      if (result.success) {
+        showToast(language === 'ar' ? 'تم حفظ الفئة بنجاح' : 'Category saved successfully', 'success');
+        setName('');
+        setNameAr('');
+        setParentId(null);
+        setIcon('');
+        setCategoryImage('');
+        
+        // Refresh to get server data with ID
+        fetchCategories();
+      } else {
+        showToast(result.error || 'Error saving category', 'error');
+      }
     } catch (error: any) {
       showToast(error.response?.data?.detail || 'Error saving category', 'error');
     } finally {
@@ -93,10 +102,27 @@ export default function CategoriesAdmin() {
   };
 
   const handleDelete = async (id: string) => {
+    // Optimistic delete - remove from UI immediately
+    const categoryToDelete = categories.find(c => c.id === id);
+    setCategories(prev => prev.filter(c => c.id !== id));
+    
     try {
-      await categoriesApi.delete(id);
-      fetchCategories();
+      const result = await adminSync.deleteCategory(id);
+      
+      if (!result.success) {
+        // Rollback - re-add the category
+        if (categoryToDelete) {
+          setCategories(prev => [...prev, categoryToDelete]);
+        }
+        showToast(result.error || 'Failed to delete category', 'error');
+      } else {
+        showToast(language === 'ar' ? 'تم حذف الفئة بنجاح' : 'Category deleted successfully', 'success');
+      }
     } catch (error) {
+      // Rollback on error
+      if (categoryToDelete) {
+        setCategories(prev => [...prev, categoryToDelete]);
+      }
       console.error('Error deleting category:', error);
     }
   };
