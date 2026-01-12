@@ -1,43 +1,118 @@
-import React, { useEffect, useState } from 'react';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
-import { Stack, useRouter, useSegments } from 'expo-router';
+import React, { useEffect, useState, useRef } from 'react';
+import { View, ActivityIndicator, StyleSheet, Platform } from 'react-native';
+import { Stack, useRouter, useSegments, usePathname } from 'expo-router';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useAppStore, useHasHydrated, useUser } from '../src/store/appStore';
 import { adminApi } from '../src/services/api';
+import { syncService } from '../src/services/syncService';
+import { networkService } from '../src/services/networkService';
+import { screenshotProtectionService } from '../src/services/screenshotProtectionService';
+import { autoLogoutService } from '../src/services/autoLogoutService';
+import { offlineDatabaseService } from '../src/services/offlineDatabaseService';
 
 // Auth Guard Component - Monitors auth state and handles navigation
 function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const segments = useSegments();
+  const pathname = usePathname();
   const isAuthenticated = useAppStore((state) => state.isAuthenticated);
   const hasHydrated = useHasHydrated();
   const setHasHydrated = useAppStore((state) => state.setHasHydrated);
   const user = useAppStore((state) => state.user);
   const currentMood = useAppStore((state) => state.currentMood);
   const setAdmins = useAppStore((state) => state.setAdmins);
+  const logout = useAppStore((state) => state.logout);
   const [isNavigationReady, setIsNavigationReady] = useState(false);
   const [showContent, setShowContent] = useState(false);
+  const servicesInitialized = useRef(false);
+
+  /**
+   * Initialize core services on app startup
+   */
+  useEffect(() => {
+    const initializeServices = async () => {
+      if (servicesInitialized.current) return;
+      servicesInitialized.current = true;
+
+      console.log('[App] Initializing services...');
+
+      try {
+        // Initialize offline database (SQLite)
+        await offlineDatabaseService.initialize();
+        console.log('[App] Offline database initialized');
+
+        // Initialize network monitoring
+        await networkService.initialize();
+        console.log('[App] Network service initialized');
+
+        // Initialize screenshot protection
+        await screenshotProtectionService.initialize();
+        console.log('[App] Screenshot protection initialized');
+
+        // Initialize auto-logout service
+        await autoLogoutService.initialize(() => {
+          console.log('[App] Auto-logout triggered after 90 days inactivity');
+          logout();
+          router.replace('/login');
+        });
+        console.log('[App] Auto-logout service initialized');
+
+        // Start sync service
+        syncService.start();
+        console.log('[App] Sync service started');
+
+      } catch (error) {
+        console.error('[App] Service initialization error:', error);
+      }
+    };
+
+    initializeServices();
+
+    // Cleanup on unmount
+    return () => {
+      networkService.cleanup();
+      screenshotProtectionService.cleanup();
+      autoLogoutService.cleanup();
+      syncService.stop();
+      offlineDatabaseService.close();
+    };
+  }, []);
+
+  /**
+   * Update screenshot protection based on current screen
+   */
+  useEffect(() => {
+    if (pathname) {
+      screenshotProtectionService.updateForScreen(pathname);
+    }
+  }, [pathname]);
+
+  /**
+   * Record user activity for auto-logout tracking
+   */
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      autoLogoutService.recordUserActivity();
+      offlineDatabaseService.updateLastActivity(user.id);
+    }
+  }, [isAuthenticated, user, pathname]);
 
   /**
    * Bug Fix #3: Fetch admins list globally on app startup
-   * This ensures that when a newly added admin logs in, 
-   * their email will be found in the admins list for proper access control
    */
   useEffect(() => {
     const fetchAdminsGlobally = async () => {
       if (!isAuthenticated) return;
       
       try {
-        // Use the check-access endpoint which is available to all authenticated users
         const response = await adminApi.checkAccess();
         if (response.data) {
           setAdmins(response.data);
           console.log('AuthGuard: Fetched admins list for access control');
         }
       } catch (error) {
-        // Admins fetch may fail - the list will remain empty
         console.log('AuthGuard: Could not fetch admins list');
       }
     };
@@ -47,7 +122,7 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
     }
   }, [hasHydrated, isAuthenticated, setAdmins]);
 
-  // Force show content after timeout - ensures app is never stuck on loading
+  // Force show content after timeout
   useEffect(() => {
     const timeout = setTimeout(() => {
       console.log('AuthGuard: Force showing content');
@@ -59,14 +134,12 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
     return () => clearTimeout(timeout);
   }, []);
 
-  // If hydration completes normally, show content
   useEffect(() => {
     if (hasHydrated) {
       setShowContent(true);
     }
   }, [hasHydrated]);
 
-  // Wait for navigation to be ready
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsNavigationReady(true);
@@ -75,7 +148,6 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    // Don't do anything until hydration is complete and navigation is ready
     if (!hasHydrated || !isNavigationReady) {
       console.log('Auth Guard: Waiting...', { hasHydrated, isNavigationReady });
       return;
@@ -88,19 +160,16 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
                             segments[0] === 'checkout' || segments[0] === 'orders' ||
                             segments[0] === 'favorites';
 
-    // If user is authenticated and on login page, redirect to home
     if (isAuthenticated && inAuthGroup) {
       console.log('Auth Guard: User authenticated, redirecting from login to home');
       setTimeout(() => router.replace('/(tabs)'), 50);
     }
-    // If user is not authenticated and trying to access protected routes
     else if (!isAuthenticated && inProtectedRoute) {
       console.log('Auth Guard: User not authenticated, redirecting to login');
       setTimeout(() => router.replace('/login'), 50);
     }
   }, [isAuthenticated, hasHydrated, segments, user, isNavigationReady]);
 
-  // Show loading screen while hydrating (with force-show fallback)
   if (!showContent) {
     return (
       <View style={[styles.loadingContainer, { backgroundColor: currentMood?.background || '#0F172A' }]}>
