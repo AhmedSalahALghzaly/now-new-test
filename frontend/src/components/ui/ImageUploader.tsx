@@ -171,13 +171,18 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
         const newImages: string[] = [];
         
         for (const asset of result.assets) {
-          if (asset.base64) {
+          let imageUrl = '';
+          
+          if (asset.uri) {
+            // Apply compression for images > 1MB, preserve PNG format
+            imageUrl = await processImageWithCompression(asset.uri, asset.mimeType || 'image/jpeg');
+          } else if (asset.base64) {
             const mimeType = asset.mimeType || 'image/jpeg';
-            const base64Url = `data:${mimeType};base64,${asset.base64}`;
-            newImages.push(base64Url);
-          } else if (asset.uri) {
-            // Fallback to URI if base64 not available
-            newImages.push(asset.uri);
+            imageUrl = `data:${mimeType};base64,${asset.base64}`;
+          }
+          
+          if (imageUrl) {
+            newImages.push(imageUrl);
           }
         }
 
