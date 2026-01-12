@@ -183,11 +183,11 @@ export const customerApi = {
   getAll: (sortBy?: string) => api.get('/customers', { params: { sort_by: sortBy } }),
   getById: (id: string) => api.get(`/customers/${id}`),
   delete: (id: string) => api.delete(`/customers/${id}`),
-  // Admin customer management
-  getFavorites: (userId: string) => api.get(`/admin/customer/${userId}/favorites`),
-  getCart: (userId: string) => api.get(`/admin/customer/${userId}/cart`),
-  getOrders: (userId: string) => api.get(`/admin/customer/${userId}/orders`),
-  markOrdersViewed: (userId: string) => api.patch(`/admin/customer/${userId}/orders/mark-viewed`),
+  // Admin customer management - use correct /customers/ prefix
+  getFavorites: (userId: string) => api.get(`/customers/admin/customer/${userId}/favorites`),
+  getCart: (userId: string) => api.get(`/customers/admin/customer/${userId}/cart`),
+  getOrders: (userId: string) => api.get(`/customers/admin/customer/${userId}/orders`),
+  markOrdersViewed: (userId: string) => api.patch(`/customers/admin/customer/${userId}/orders/mark-viewed`),
 };
 
 // Alias for existing code
