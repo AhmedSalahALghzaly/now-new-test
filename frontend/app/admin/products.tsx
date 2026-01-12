@@ -463,9 +463,26 @@ export default function ProductsAdmin() {
 
             {/* Product Brand Selection */}
             <View style={styles.formGroup}>
-              <Text style={[styles.label, { color: colors.text }]}>
-                {language === 'ar' ? 'ماركة المنتج *' : 'Product Brand *'}
-              </Text>
+              <View style={styles.labelWithSearch}>
+                <Text style={[styles.label, { color: colors.text }]}>
+                  {language === 'ar' ? 'ماركة المنتج *' : 'Product Brand *'}
+                </Text>
+                <View style={[styles.miniSearchContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                  <Ionicons name="search" size={14} color={colors.textSecondary} />
+                  <TextInput
+                    style={[styles.miniSearchInput, { color: colors.text }]}
+                    value={brandSearchQuery}
+                    onChangeText={setBrandSearchQuery}
+                    placeholder={language === 'ar' ? 'بحث...' : 'Search...'}
+                    placeholderTextColor={colors.textSecondary}
+                  />
+                  {brandSearchQuery.length > 0 && (
+                    <TouchableOpacity onPress={() => setBrandSearchQuery('')}>
+                      <Ionicons name="close-circle" size={14} color={colors.textSecondary} />
+                    </TouchableOpacity>
+                  )}
+                </View>
+              </View>
               <Text style={[styles.fieldHint, { color: colors.textSecondary }]}>
                 {language === 'ar' ? 'اختر الماركة المصنعة للمنتج' : 'Select the product manufacturer brand'}
               </Text>
@@ -490,7 +507,15 @@ export default function ProductsAdmin() {
               )}
               
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsContainer}>
-                {productBrands.map((brand) => (
+                {productBrands
+                  .filter((brand) => {
+                    if (!brandSearchQuery.trim()) return true;
+                    const query = brandSearchQuery.toLowerCase();
+                    const name = (brand.name || '').toLowerCase();
+                    const nameAr = (brand.name_ar || '').toLowerCase();
+                    return name.includes(query) || nameAr.includes(query);
+                  })
+                  .map((brand) => (
                   <TouchableOpacity
                     key={brand.id}
                     style={[
