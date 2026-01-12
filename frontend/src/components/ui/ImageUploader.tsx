@@ -2,6 +2,7 @@
  * Reusable Image Uploader Component
  * Opens device gallery/folders to select images directly
  * Modern 2025 UX with animations and progress
+ * Features: Auto-compression for images >1MB, PNG format preservation
  */
 import React, { useState, useRef } from 'react';
 import {
@@ -22,6 +23,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '../../hooks/useTheme';
 import { useTranslation } from '../../hooks/useTranslation';
+import { imageCompressionService } from '../../services/imageCompressionService';
 
 interface ImageUploaderProps {
   mode: 'single' | 'multiple';
