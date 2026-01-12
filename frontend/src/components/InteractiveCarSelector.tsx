@@ -12,9 +12,9 @@ import {
   Dimensions,
   ScrollView,
   TextInput,
-  FlatList,
   Platform,
 } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { Image } from 'expo-image';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
