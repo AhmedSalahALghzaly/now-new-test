@@ -805,10 +805,12 @@ export const useAdminSync = () => {
     
     // Categories
     createCategory: (data: any) => adminSyncService.createCategory(data),
+    updateCategory: (id: string, data: any) => adminSyncService.updateCategory(id, data),
     deleteCategory: (id: string) => adminSyncService.deleteCategory(id),
     
     // Product Brands
     createProductBrand: (data: any) => adminSyncService.createProductBrand(data),
+    updateProductBrand: (id: string, data: any) => adminSyncService.updateProductBrand(id, data),
     deleteProductBrand: (id: string) => adminSyncService.deleteProductBrand(id),
     
     // Car Brands
