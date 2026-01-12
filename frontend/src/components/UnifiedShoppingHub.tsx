@@ -457,7 +457,7 @@ export const UnifiedShoppingHub: React.FC<UnifiedShoppingHubProps> = ({
 
       // Refresh orders
       const ordersRes = isAdminView && customerId
-        ? await api.get(`/admin/customer/${customerId}/orders`)
+        ? await api.get(`/customers/admin/customer/${customerId}/orders`)
         : await orderApi.getAll();
       setOrders(ordersRes.data?.orders || ordersRes.data || []);
     } catch (error) {
