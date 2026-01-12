@@ -1151,6 +1151,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
   },
+  flashListContainer: {
+    flex: 1,
+    minHeight: 300,
+  },
   productsGrid: {
     padding: 12,
   },
