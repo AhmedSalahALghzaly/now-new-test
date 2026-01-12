@@ -91,7 +91,7 @@ export default function OrderDetailAdmin() {
             setUpdatingStatus('cancelled');
             try {
               await new Promise(resolve => setTimeout(resolve, 1000));
-              await orderApi.updateStatus(id, 'cancelled');
+              await orderApi.updateStatus(orderId, 'cancelled');
               setOrder((prev) => ({ ...prev, status: 'cancelled' }));
             } catch (error) {
               Alert.alert('Error', error.response?.data?.detail || 'Failed to cancel order');
@@ -102,7 +102,7 @@ export default function OrderDetailAdmin() {
         }
       ]
     );
-  }, [id, language]);
+  }, [orderId, language]);
 
   const handleDeleteOrder = useCallback(async () => {
     Alert.alert(
@@ -116,7 +116,7 @@ export default function OrderDetailAdmin() {
           onPress: async () => {
             setDeleting(true);
             try {
-              await orderApi.delete(id);
+              await orderApi.delete(orderId);
               Alert.alert(
                 language === 'ar' ? 'تم' : 'Done',
                 language === 'ar' ? 'تم حذف الطلب بنجاح' : 'Order deleted successfully',
@@ -130,7 +130,7 @@ export default function OrderDetailAdmin() {
         }
       ]
     );
-  }, [id, language, router]);
+  }, [orderId, language, router]);
 
   const applyDiscount = async () => {
     const discountAmount = parseFloat(discountInput);
