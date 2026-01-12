@@ -1065,6 +1065,7 @@ export default function MarketingSuiteScreen() {
                 );
               }}
             />
+            </View>
           </View>
         </View>
       </Modal>
