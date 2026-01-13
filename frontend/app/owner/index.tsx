@@ -530,7 +530,7 @@ export default function OwnerDashboard() {
             <View style={styles.quickStatCard}>
               <BlurView intensity={15} tint="light" style={styles.quickStatBlur}>
                 <Text style={styles.quickStatValue}>
-                  {orders.filter((o: any) => o.status === 'delivered').length}
+                  {(Array.isArray(orders) ? orders : []).filter((o: any) => o.status === 'delivered').length}
                 </Text>
                 <Text style={styles.quickStatLabel}>
                   {language === 'ar' ? 'تم التسليم' : 'Delivered'}
@@ -540,7 +540,7 @@ export default function OwnerDashboard() {
             <View style={styles.quickStatCard}>
               <BlurView intensity={15} tint="light" style={styles.quickStatBlur}>
                 <Text style={styles.quickStatValue}>
-                  {orders.filter((o: any) => o.status === 'shipped').length}
+                  {(Array.isArray(orders) ? orders : []).filter((o: any) => o.status === 'shipped').length}
                 </Text>
                 <Text style={styles.quickStatLabel}>
                   {language === 'ar' ? 'قيد الشحن' : 'Shipped'}
@@ -550,7 +550,7 @@ export default function OwnerDashboard() {
             <View style={styles.quickStatCard}>
               <BlurView intensity={15} tint="light" style={styles.quickStatBlur}>
                 <Text style={styles.quickStatValue}>
-                  {orders.filter((o: any) => o.status === 'cancelled').length}
+                  {(Array.isArray(orders) ? orders : []).filter((o: any) => o.status === 'cancelled').length}
                 </Text>
                 <Text style={styles.quickStatLabel}>
                   {language === 'ar' ? 'ملغي' : 'Cancelled'}
