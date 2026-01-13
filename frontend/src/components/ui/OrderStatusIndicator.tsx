@@ -142,21 +142,20 @@ export const OrderStatusIndicator = ({
         />
       </Animated.View>
 
-      {/* Multiple Orders Indicator - White circle with pulsing arrow */}
+      {/* Multiple Orders Indicator - Centered within main indicator */}
       {hasMultipleOrders && (
         <Animated.View
           style={[
             styles.multiOrderIndicator,
             {
-              width: size * 0.65,
-              height: size * 0.65,
-              borderRadius: size * 0.325,
-              left: size * 0.5,
+              width: size * 0.5,
+              height: size * 0.5,
+              borderRadius: size * 0.25,
             },
             arrowPulseStyle,
           ]}
         >
-          <Ionicons name="arrow-up" size={size * 0.4} color={config.color} />
+          <Ionicons name="chevron-up" size={size * 0.35} color={config.color} />
         </Animated.View>
       )}
     </View>
