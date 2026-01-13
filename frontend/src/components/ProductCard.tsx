@@ -74,11 +74,34 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
   }, [language, product.product_brand_name, product.product_brand_name_ar]);
 
   const carModelName = useMemo(() => {
-    if (language === 'ar' && product.compatible_car_model_ar) {
-      return product.compatible_car_model_ar;
+    // Build the full compatibility string: "Brand Model Year-Year" (e.g., "Toyota Corolla 2020-2024")
+    const parts: string[] = [];
+    
+    // Get car brand name
+    if (language === 'ar' && product.compatible_car_brand_ar) {
+      parts.push(product.compatible_car_brand_ar);
+    } else if (product.compatible_car_brand) {
+      parts.push(product.compatible_car_brand);
     }
-    return product.compatible_car_model || '';
-  }, [language, product.compatible_car_model, product.compatible_car_model_ar]);
+    
+    // Get car model name
+    if (language === 'ar' && product.compatible_car_model_ar) {
+      parts.push(product.compatible_car_model_ar);
+    } else if (product.compatible_car_model) {
+      parts.push(product.compatible_car_model);
+    }
+    
+    // Add year range if available
+    if (product.compatible_car_year_from) {
+      if (product.compatible_car_year_to && product.compatible_car_year_to !== product.compatible_car_year_from) {
+        parts.push(`${product.compatible_car_year_from}-${product.compatible_car_year_to}`);
+      } else {
+        parts.push(`${product.compatible_car_year_from}`);
+      }
+    }
+    
+    return parts.join(' ');
+  }, [language, product.compatible_car_model, product.compatible_car_model_ar, product.compatible_car_brand, product.compatible_car_brand_ar, product.compatible_car_year_from, product.compatible_car_year_to]);
 
   const countryName = useMemo(() => {
     if (language === 'ar' && product.manufacturer_country_ar) {
