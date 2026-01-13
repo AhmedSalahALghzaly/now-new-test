@@ -8,6 +8,7 @@ import uuid
 
 from ....core.database import db
 from ....core.security import get_current_user, get_user_role, get_session_token, serialize_doc
+from ....services.notification import notify_admins_new_user
 
 router = APIRouter(prefix="/auth")
 
@@ -31,7 +32,9 @@ async def exchange_session(request: Request, response: Response):
             raise HTTPException(status_code=500, detail="Authentication service error")
     
     user = await db.users.find_one({"email": user_data["email"]})
+    is_new_user = False
     if not user:
+        is_new_user = True
         user = {
             "_id": str(uuid.uuid4()),
             "email": user_data["email"],
@@ -42,6 +45,12 @@ async def exchange_session(request: Request, response: Response):
             "updated_at": datetime.now(timezone.utc),
         }
         await db.users.insert_one(user)
+        
+        # Notify admins about new user registration
+        await notify_admins_new_user(
+            user_email=user_data["email"],
+            user_name=user_data.get("name")
+        )
     
     session = {
         "_id": str(uuid.uuid4()),
