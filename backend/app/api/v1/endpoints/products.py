@@ -7,9 +7,10 @@ from datetime import datetime, timezone
 import uuid
 
 from ....core.database import db
-from ....core.security import get_current_user, serialize_doc
+from ....core.security import get_current_user, serialize_doc, get_user_role
 from ....models.schemas import ProductCreate
 from ....services.websocket import manager
+from ....services.notification import notify_admins_product_change
 
 router = APIRouter(prefix="/products")
 
