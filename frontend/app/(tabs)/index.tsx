@@ -356,30 +356,28 @@ export default function HomeScreen() {
   });
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Glassblur Background Effect */}
-      <View style={styles.blurBackgroundContainer}>
-        <LinearGradient
-          colors={['#1a1a2e', '#16213e', '#0f3460']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={StyleSheet.absoluteFill}
-        />
-        <BlurView
-          intensity={80}
-          tint="dark"
-          style={[StyleSheet.absoluteFill, styles.blurOverlay]}
-        />
-      </View>
+    <View style={[styles.container]}>
+      {/* Glassblur Background Effect - Full screen behind all content */}
+      <LinearGradient
+        colors={['#0f1624', '#1a2744', '#0d1b2a', '#1b263b']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={StyleSheet.absoluteFill}
+      />
+      <BlurView
+        intensity={60}
+        tint="dark"
+        style={StyleSheet.absoluteFill}
+      />
       
       <Header showBack={false} />
       
       <ScrollView
-        style={styles.scrollView}
+        style={[styles.scrollView, { backgroundColor: 'transparent' }]}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#fff" />
         }
         keyboardShouldPersistTaps="handled"
       >
