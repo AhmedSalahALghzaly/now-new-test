@@ -61,22 +61,33 @@ class ImageCompressionService {
 
   /**
    * Compress an image if it exceeds 1MB
-   * Preserves PNG format for PNG images
+   * CRITICAL FIX: Always preserves PNG format with transparency (alpha channel)
+   * For PNG images, we use resize-based compression to maintain lossless quality
    */
   async compressImage(uri: string, preserveFormat: boolean = true): Promise<CompressionResult> {
     try {
       const originalSize = await this.getImageSize(uri);
       const isPng = this.isPngImage(uri);
-      const outputFormat = preserveFormat && isPng ? ImageManipulator.SaveFormat.PNG : ImageManipulator.SaveFormat.JPEG;
       
-      console.log(`[ImageCompression] Processing image: ${originalSize} bytes, format: ${isPng ? 'PNG' : 'JPEG'}`);
+      // CRITICAL: Always use PNG format for PNG images to preserve transparency
+      // JPEG format loses alpha channel causing black backgrounds
+      const outputFormat = isPng ? ImageManipulator.SaveFormat.PNG : ImageManipulator.SaveFormat.JPEG;
+      
+      console.log(`[ImageCompression] Processing image: ${originalSize} bytes, format: ${isPng ? 'PNG (preserving alpha)' : 'JPEG'}`);
 
-      // If image is under threshold, return original
+      // If image is under threshold, return original with preserved format
       if (originalSize < SIZE_THRESHOLD_BYTES) {
-        console.log('[ImageCompression] Image under 1MB, skipping compression');
+        console.log('[ImageCompression] Image under 1MB, skipping compression (format preserved)');
         
-        // Get image dimensions
-        const info = await ImageManipulator.manipulateAsync(uri, [], { base64: true });
+        // Get image dimensions - use PNG format for PNG images to preserve transparency
+        const info = await ImageManipulator.manipulateAsync(
+          uri, 
+          [], 
+          { 
+            base64: true,
+            format: outputFormat,
+          }
+        );
         
         return {
           uri: info.uri,
@@ -94,32 +105,37 @@ class ImageCompressionService {
       // Compress the image by 50%
       console.log('[ImageCompression] Compressing image by 50%...');
       
-      // For PNG, we use resize to reduce file size (PNG is lossless, so quality doesn't apply)
-      // For JPEG, we use compress quality
+      // For PNG: We use resize to reduce file size while preserving transparency
+      // PNG is lossless, so quality/compress doesn't apply - we reduce dimensions
+      // For JPEG: We use compress quality parameter
       let manipulatedImage;
       
-      if (isPng && preserveFormat) {
-        // For PNG: Reduce dimensions to achieve ~50% file size reduction
-        // Since PNG is lossless, we need to reduce actual pixels
+      if (isPng) {
+        // PNG COMPRESSION: Reduce dimensions to achieve ~50% file size reduction
+        // This preserves the alpha channel (transparency) unlike JPEG conversion
         const scaleFactor = Math.sqrt(COMPRESSION_QUALITY); // ~0.707 for 50% reduction
         
-        manipulatedImage = await ImageManipulator.manipulateAsync(
+        // First get current dimensions
+        const dimensionInfo = await ImageManipulator.manipulateAsync(
           uri,
-          [{ resize: { width: undefined, height: undefined } }], // First get dimensions
-          { format: ImageManipulator.SaveFormat.PNG, base64: true }
+          [],
+          { format: ImageManipulator.SaveFormat.PNG }
         );
         
-        // Now resize with scale factor
-        const newWidth = Math.floor(manipulatedImage.width * scaleFactor);
-        const newHeight = Math.floor(manipulatedImage.height * scaleFactor);
+        // Calculate new dimensions
+        const newWidth = Math.max(Math.floor(dimensionInfo.width * scaleFactor), 100);
+        const newHeight = Math.max(Math.floor(dimensionInfo.height * scaleFactor), 100);
         
+        console.log(`[ImageCompression] PNG resize: ${dimensionInfo.width}x${dimensionInfo.height} -> ${newWidth}x${newHeight}`);
+        
+        // Resize with PNG format to preserve transparency
         manipulatedImage = await ImageManipulator.manipulateAsync(
           uri,
           [{ resize: { width: newWidth, height: newHeight } }],
           { format: ImageManipulator.SaveFormat.PNG, base64: true }
         );
       } else {
-        // For JPEG: Use compress quality
+        // JPEG COMPRESSION: Use compress quality parameter
         manipulatedImage = await ImageManipulator.manipulateAsync(
           uri,
           [],
@@ -135,6 +151,7 @@ class ImageCompressionService {
       const compressionRatio = originalSize > 0 ? compressedSize / originalSize : 1;
       
       console.log(`[ImageCompression] Compressed: ${originalSize} -> ${compressedSize} bytes (${(compressionRatio * 100).toFixed(1)}%)`);
+      console.log(`[ImageCompression] Output format: ${isPng ? 'PNG (alpha preserved)' : 'JPEG'}`);
 
       return {
         uri: manipulatedImage.uri,
@@ -144,7 +161,7 @@ class ImageCompressionService {
         originalSize,
         compressedSize,
         compressionRatio,
-        format: isPng && preserveFormat ? 'png' : 'jpeg',
+        format: isPng ? 'png' : 'jpeg',
         wasCompressed: true,
       };
     } catch (error) {
