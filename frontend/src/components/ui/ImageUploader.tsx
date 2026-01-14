@@ -157,11 +157,12 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
       }
 
       // Launch image picker - This opens the device's gallery/file picker
+      // CRITICAL: quality: 1 to preserve PNG transparency - lower quality converts to JPEG
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: aspectRatio,
-        quality: 0.7,
+        quality: 1, // CRITICAL: Use full quality to preserve PNG alpha channel
         base64: true,
         allowsMultipleSelection: mode === 'multiple',
         selectionLimit: mode === 'multiple' ? maxImages - (Array.isArray(value) ? value.length : 0) : 1,
