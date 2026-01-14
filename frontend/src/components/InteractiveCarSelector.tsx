@@ -491,7 +491,8 @@ export const InteractiveCarSelector: React.FC = () => {
   }));
 
   const containerHeight = useAnimatedStyle(() => ({
-    height: interpolate(expandAnim.value, [0, 1], [70, 240], Extrapolation.CLAMP),
+    // 30% of screen height when expanded (was 25% / 240px)
+    height: interpolate(expandAnim.value, [0, 1], [70, SCREEN_HEIGHT * 0.30], Extrapolation.CLAMP),
   }));
 
   const glassStyle = useAnimatedStyle(() => ({
