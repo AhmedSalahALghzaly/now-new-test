@@ -65,41 +65,13 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
   const [error, setError] = useState<string | null>(null);
 
   /**
-   * Process image with compression if needed (>1MB -> 50% compression, preserve PNG)
+   * DISABLED: Image compression removed - upload original image as-is
+   * This preserves PNG transparency and original quality
    */
-  const processImageWithCompression = async (uri: string, mimeType: string): Promise<string> => {
-    try {
-      setIsCompressing(true);
-      console.log('[ImageUploader] Processing image for compression...');
-      
-      // Use the compression service (auto-compresses if >1MB, preserves PNG)
-      const result = await imageCompressionService.compressForUpload(uri, {
-        maxWidth: 1920,
-        maxHeight: 1080,
-        preserveFormat: true, // Preserve PNG format
-      });
-
-      if (result.base64) {
-        const format = result.format === 'png' ? 'image/png' : 'image/jpeg';
-        const base64Url = `data:${format};base64,${result.base64}`;
-        
-        if (result.wasCompressed) {
-          console.log(`[ImageUploader] Image compressed: ${(result.originalSize / 1024).toFixed(1)}KB -> ${(result.compressedSize / 1024).toFixed(1)}KB (${(result.compressionRatio * 100).toFixed(1)}%)`);
-        } else {
-          console.log('[ImageUploader] Image under 1MB, no compression needed');
-        }
-        
-        return base64Url;
-      }
-      
-      // Fallback to original
-      return uri;
-    } catch (error) {
-      console.error('[ImageUploader] Compression error:', error);
-      return uri;
-    } finally {
-      setIsCompressing(false);
-    }
+  const processImageDirectly = async (uri: string, mimeType: string): Promise<string> => {
+    // Simply return the original URI - no compression
+    console.log('[ImageUploader] Using original image without compression');
+    return uri;
   };
 
   // Request media library permissions
