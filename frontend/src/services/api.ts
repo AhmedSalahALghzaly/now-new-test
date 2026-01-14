@@ -170,7 +170,7 @@ export const cartApi = {
 // Order APIs (Enhanced with Admin-Assisted Orders)
 export const orderApi = {
   getAll: () => api.get('/orders'),
-  getAllAdmin: () => api.get('/orders/all'),
+  getAllAdmin: () => api.get('/orders/admin'),
   create: (data: any) => api.post('/orders', data),
   createAdminAssisted: (data: {
     customer_id: string;
