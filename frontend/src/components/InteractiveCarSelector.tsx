@@ -1084,12 +1084,11 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   gridItem: {
-    // Dynamic width: 5 items per row with gaps
-    // SCREEN_WIDTH - padding(24) - gaps(32) = available / 5
-    width: (SCREEN_WIDTH - 24 - 32) / 5,
+    // Dynamic width: 4 items per row - user specified values
+    width: (SCREEN_WIDTH - 31 - 39) / 4,
     minWidth: 70,
-    maxWidth: 100,
-    height: 105,
+    maxWidth: 110,
+    height: 113,
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
