@@ -136,6 +136,21 @@ export default function CarModelDetailScreen() {
             {carModel.year_start} - {carModel.year_end}
           </Text>
 
+          {/* Chassis Number Display */}
+          {carModel.chassis_number && (
+            <View style={[styles.chassisSection, { backgroundColor: colors.secondary + '10', borderColor: colors.secondary + '30' }]}>
+              <View style={styles.chassisHeader}>
+                <Ionicons name="key-outline" size={18} color={colors.secondary} />
+                <Text style={[styles.chassisLabel, { color: colors.secondary }]}>
+                  {language === 'ar' ? 'رقم الشاسيه' : 'Chassis Number'}
+                </Text>
+              </View>
+              <Text style={[styles.chassisNumber, { color: colors.text }]}>
+                {carModel.chassis_number}
+              </Text>
+            </View>
+          )}
+
           {/* Description */}
           {(carModel.description || carModel.description_ar) && (
             <View style={styles.section}>
