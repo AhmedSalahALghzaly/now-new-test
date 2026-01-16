@@ -363,6 +363,28 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginBottom: 16,
   },
+  chassisSection: {
+    padding: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 8,
+  },
+  chassisHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 6,
+  },
+  chassisLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  chassisNumber: {
+    fontSize: 18,
+    fontWeight: '700',
+    letterSpacing: 1,
+    fontFamily: 'monospace',
+  },
   section: {
     marginTop: 24,
   },
