@@ -1543,7 +1543,7 @@ const styles = StyleSheet.create({
     width: (SCREEN_WIDTH - 40) / 3.5,
     minWidth: 95,
     maxWidth: 130,
-    height: 185,
+    height: 195,
     borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
