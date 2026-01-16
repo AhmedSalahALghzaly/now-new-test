@@ -1466,9 +1466,9 @@ const styles = StyleSheet.create({
     padding: 6,
   },
   chassisGridCardWrapper: {
-    width: (SCREEN_WIDTH - 36) / 3,
+    width: (SCREEN_WIDTH - 36) / 3.25,
     padding: 3,
-    height: 195,
+    height: 170,
   },
   chassisGridCard: {
     borderRadius: 14,
@@ -1482,18 +1482,18 @@ const styles = StyleSheet.create({
   },
   chassisGridCardImage: {
     width: '100%',
-    height: 85,
+    height: 70,
     backgroundColor: 'transparent',
   },
   chassisGridCardPlaceholder: {
     width: '100%',
-    height: 85,
+    height: 70,
     alignItems: 'center',
     justifyContent: 'center',
   },
   chassisGridCardInfo: {
-    padding: 8,
-    gap: 2,
+    padding: 5,
+    gap: 1,
     alignItems: 'center',
     flex: 1,
     justifyContent: 'center',
