@@ -3,7 +3,8 @@ from .endpoints import (
     auth, partners, admins, suppliers, distributors, subscribers,
     notifications, analytics, car_brands, car_models, product_brands,
     categories, products, cart, orders, favorites, comments,
-    promotions, bundle_offers, marketing, sync, health, customers
+    promotions, bundle_offers, marketing, sync, health, customers,
+    delta_sync
 )
 
 api_router = APIRouter(prefix="/api")
@@ -31,4 +32,5 @@ api_router.include_router(promotions.router, tags=["Promotions"])
 api_router.include_router(bundle_offers.router, tags=["Bundle Offers"])
 api_router.include_router(marketing.router, tags=["Marketing"])
 api_router.include_router(sync.router, tags=["Sync"])
+api_router.include_router(delta_sync.router, tags=["Delta Sync"])
 api_router.include_router(health.router, tags=["Health"])
