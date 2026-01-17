@@ -18,7 +18,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAppStore } from '../../src/store/appStore';
 import { supplierApi, productBrandApi } from '../../src/services/api';
@@ -32,12 +32,17 @@ type ViewMode = 'list' | 'add' | 'edit' | 'profile';
 
 export default function SuppliersScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ viewMode?: string; id?: string }>();
   const insets = useSafeAreaInsets();
   const language = useAppStore((state) => state.language);
   const suppliers = useAppStore((state) => state.suppliers);
   const setSuppliers = useAppStore((state) => state.setSuppliers);
   const productBrands = useAppStore((state) => state.productBrands);
+  const user = useAppStore((state) => state.user);
   const isRTL = language === 'ar';
+  
+  // Check if user is owner or admin
+  const isOwnerOrAdmin = user?.role === 'owner' || user?.role === 'admin' || user?.is_admin;
 
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [refreshing, setRefreshing] = useState(false);
