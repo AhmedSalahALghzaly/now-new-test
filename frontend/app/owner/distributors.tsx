@@ -17,7 +17,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAppStore } from '../../src/store/appStore';
 import { distributorApi, carBrandApi } from '../../src/services/api';
@@ -31,12 +31,17 @@ type ViewMode = 'list' | 'add' | 'edit' | 'profile';
 
 export default function DistributorsScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ viewMode?: string; id?: string }>();
   const insets = useSafeAreaInsets();
   const language = useAppStore((state) => state.language);
   const distributors = useAppStore((state) => state.distributors);
   const setDistributors = useAppStore((state) => state.setDistributors);
   const carBrands = useAppStore((state) => state.carBrands);
+  const user = useAppStore((state) => state.user);
   const isRTL = language === 'ar';
+  
+  // Check if user is owner or admin
+  const isOwnerOrAdmin = user?.role === 'owner' || user?.role === 'admin' || user?.is_admin;
 
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [refreshing, setRefreshing] = useState(false);
