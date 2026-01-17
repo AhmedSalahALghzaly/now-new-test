@@ -402,7 +402,7 @@ export default function SuppliersScreen() {
             <Ionicons name={isRTL ? 'arrow-forward' : 'arrow-back'} size={24} color="#FFF" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>{isRTL ? 'الموردين' : 'Suppliers'}</Text>
-          <TouchableOpacity style={styles.addButton} onPress={() => { resetForm(); setViewMode('add'); }}>
+          <TouchableOpacity style={styles.addButton} onPress={() => router.push('/owner/add-entity-form?entityType=supplier')}>
             <Ionicons name="add" size={24} color="#FFF" />
           </TouchableOpacity>
         </View>
