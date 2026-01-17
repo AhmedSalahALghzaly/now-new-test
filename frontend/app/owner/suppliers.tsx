@@ -93,6 +93,17 @@ export default function SuppliersScreen() {
     fetchSuppliers();
   }, []);
 
+  // Handle URL params for direct navigation to profile
+  useEffect(() => {
+    if (params.viewMode === 'profile' && params.id) {
+      const supplier = suppliers.find((s: any) => s.id === params.id);
+      if (supplier) {
+        setSelectedSupplier(supplier);
+        setViewMode('profile');
+      }
+    }
+  }, [params.viewMode, params.id, suppliers]);
+
   const resetForm = () => {
     setFormData({
       name: '',
