@@ -73,9 +73,6 @@ export default function AddEntityFormScreen() {
   // Use same gradient colors for both entity types (teal/green theme)
   const gradientColors: [string, string, string] = ['#0D9488', '#14B8A6', '#2DD4BF'];
   const primaryColor = '#14B8A6';
-    : ['#991B1B', '#DC2626', '#EF4444'];
-
-  const primaryColor = entityType === 'supplier' ? '#14B8A6' : '#EF4444';
 
   // Get brands based on entity type
   const availableBrands = entityType === 'supplier' ? productBrands : carBrands;
