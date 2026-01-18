@@ -52,6 +52,16 @@ export const Header: React.FC<HeaderProps> = ({
   const setColorMood = useAppStore((state) => state.setColorMood);
   const currentMood = useAppStore((state) => state.currentMood);
   const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+  const subscribers = useAppStore((state) => state.subscribers) || [];
+
+  // Check if current user is a subscriber (by email or phone)
+  const isUserSubscriber = useMemo(() => {
+    if (!user) return false;
+    return subscribers.some((sub: any) => 
+      (user.email && sub.email?.toLowerCase() === user.email?.toLowerCase()) ||
+      (user.phone && sub.phone === user.phone)
+    );
+  }, [user, subscribers]);
 
   // State for search, notifications (mood switcher removed)
   const [showSearchModal, setShowSearchModal] = useState(false);
