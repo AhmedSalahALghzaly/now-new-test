@@ -128,6 +128,18 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Icons Section - Far left in RTL, Far right in LTR */}
         <View style={[styles.iconsSection, isRTL && styles.iconsSectionRTL]}>
+          {/* Subscription Request Icon */}
+          <TouchableOpacity 
+            onPress={() => router.push('/(tabs)/subscription-request')} 
+            style={styles.iconButton}
+          >
+            <Ionicons 
+              name="card-outline" 
+              size={22} 
+              color={headerIconColor} 
+            />
+          </TouchableOpacity>
+
           {/* Profile/User Icon */}
           <TouchableOpacity 
             onPress={() => router.push('/(tabs)/profile')} 
