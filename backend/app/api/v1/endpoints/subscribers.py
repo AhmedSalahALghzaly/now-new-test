@@ -101,10 +101,44 @@ async def approve_subscription_request(request_id: str, request: Request):
     if role not in ["owner", "partner"]:
         raise HTTPException(status_code=403, detail="Access denied")
     
+    # Get the subscription request
+    sub_request = await db.subscription_requests.find_one({"_id": request_id})
+    if not sub_request:
+        raise HTTPException(status_code=404, detail="Request not found")
+    
+    # Check if subscriber already exists with this phone
+    existing = await db.subscribers.find_one({
+        "phone": sub_request.get("phone"),
+        "deleted_at": None
+    })
+    
+    if not existing:
+        # Create new subscriber from request data
+        subscriber = {
+            "_id": str(uuid.uuid4()),
+            "name": sub_request.get("customer_name", ""),
+            "phone": sub_request.get("phone", ""),
+            "email": sub_request.get("email", ""),
+            "governorate": sub_request.get("governorate", ""),
+            "village": sub_request.get("village", ""),
+            "address": sub_request.get("address", ""),
+            "car_model": sub_request.get("car_model", ""),
+            "customer_id": sub_request.get("customer_id"),
+            "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc),
+            "deleted_at": None,
+        }
+        await db.subscribers.insert_one(subscriber)
+    
+    # Update request status to approved
     await db.subscription_requests.update_one(
         {"_id": request_id},
         {"$set": {"status": "approved", "updated_at": datetime.now(timezone.utc)}}
     )
+    
+    # Broadcast sync update
+    await manager.broadcast({"type": "sync", "tables": ["subscribers", "subscription_requests"]})
+    
     return {"message": "Approved"}
 
 @router.delete("/subscription-requests/{request_id}")
