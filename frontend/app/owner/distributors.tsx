@@ -218,125 +218,145 @@ export default function DistributorsScreen() {
     const displayDescription = isRTL && selectedDistributor.description_ar ? selectedDistributor.description_ar : selectedDistributor.description;
 
     return (
-      <View style={styles.container}>
-        <LinearGradient colors={['#991B1B', '#DC2626', '#EF4444']} style={StyleSheet.absoluteFill} />
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
         <ScrollView style={styles.scrollView} contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top }]}>
-          <View style={[styles.header, isRTL && styles.headerRTL]}>
-            <TouchableOpacity style={styles.backButton} onPress={() => { setViewMode('list'); setSelectedDistributor(null); router.setParams({ viewMode: undefined, id: undefined }); }}>
-              <Ionicons name={isRTL ? 'arrow-forward' : 'arrow-back'} size={24} color="#FFF" />
+          {/* Header */}
+          <View style={[styles.profileHeader, isRTL && styles.headerRTL]}>
+            <TouchableOpacity 
+              style={[styles.profileBackButton, { backgroundColor: colors.surface }]} 
+              onPress={() => { setViewMode('list'); setSelectedDistributor(null); router.setParams({ viewMode: undefined, id: undefined }); }}
+            >
+              <Ionicons name={isRTL ? 'arrow-forward' : 'arrow-back'} size={24} color={colors.text} />
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>{displayName}</Text>
+            <Text style={[styles.profileHeaderTitle, { color: colors.text }]}>{displayName}</Text>
             {isOwnerOrAdmin && (
-              <TouchableOpacity style={styles.editButton} onPress={() => router.push(`/owner/add-entity-form?entityType=distributor&id=${selectedDistributor.id}`)}>
+              <TouchableOpacity 
+                style={[styles.profileEditButton, { backgroundColor: colors.error }]} 
+                onPress={() => router.push(`/owner/add-entity-form?entityType=distributor&id=${selectedDistributor.id}`)}
+              >
                 <Ionicons name="pencil" size={20} color="#FFF" />
               </TouchableOpacity>
             )}
           </View>
 
           {/* Profile Image */}
-          <View style={styles.profileImageContainer}>
+          <View style={styles.profileImageContainerThemed}>
             {selectedDistributor.profile_image ? (
-              <Image source={{ uri: selectedDistributor.profile_image }} style={styles.profileImage} />
+              <Image source={{ uri: selectedDistributor.profile_image }} style={styles.profileImageThemed} />
             ) : (
-              <View style={styles.profilePlaceholder}>
-                <Ionicons name="car" size={60} color="#EF4444" />
+              <View style={[styles.profilePlaceholderThemed, { backgroundColor: colors.surface }]}>
+                <Ionicons name="car" size={60} color={colors.error} />
               </View>
             )}
           </View>
 
           {/* Arabic Name (if available and different) */}
           {selectedDistributor.name_ar && selectedDistributor.name_ar !== selectedDistributor.name && (
-            <Text style={styles.arabicNameText}>{selectedDistributor.name_ar}</Text>
+            <Text style={[styles.arabicNameTextThemed, { color: colors.textSecondary }]}>{selectedDistributor.name_ar}</Text>
           )}
 
-          {/* Contact Info - ALL FIELDS */}
-          <View style={styles.infoCard}>
-            <BlurView intensity={15} tint="light" style={styles.infoBlur}>
-              <Text style={styles.infoSectionTitle}>{isRTL ? 'معلومات الاتصال' : 'Contact Information'}</Text>
-              
-              {/* Phone Numbers */}
-              {selectedDistributor.phone_numbers && selectedDistributor.phone_numbers.length > 0 ? (
-                selectedDistributor.phone_numbers.map((phone: string, index: number) => (
-                  <TouchableOpacity key={index} style={styles.infoRow} onPress={() => Linking.openURL(`tel:${phone}`)}>
-                    <Ionicons name="call" size={20} color="#EF4444" />
-                    <Text style={styles.infoText}>{phone}</Text>
-                    <Ionicons name="chevron-forward" size={16} color="#EF4444" />
-                  </TouchableOpacity>
-                ))
-              ) : selectedDistributor.phone ? (
-                <TouchableOpacity style={styles.infoRow} onPress={() => Linking.openURL(`tel:${selectedDistributor.phone}`)}>
-                  <Ionicons name="call" size={20} color="#EF4444" />
-                  <Text style={styles.infoText}>{selectedDistributor.phone}</Text>
-                  <Ionicons name="chevron-forward" size={16} color="#EF4444" />
+          {/* Contact Info Card */}
+          <View style={[styles.infoCardThemed, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <Text style={[styles.infoSectionTitleThemed, { color: colors.textSecondary }]}>
+              {isRTL ? 'معلومات الاتصال' : 'Contact Information'}
+            </Text>
+            
+            {/* Phone Numbers */}
+            {selectedDistributor.phone_numbers && selectedDistributor.phone_numbers.length > 0 ? (
+              selectedDistributor.phone_numbers.map((phone: string, index: number) => (
+                <TouchableOpacity key={index} style={styles.infoRowThemed} onPress={() => Linking.openURL(`tel:${phone}`)}>
+                  <View style={[styles.infoIconContainer, { backgroundColor: colors.error + '15' }]}>
+                    <Ionicons name="call" size={18} color={colors.error} />
+                  </View>
+                  <Text style={[styles.infoTextThemed, { color: colors.text }]}>{phone}</Text>
+                  <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} />
                 </TouchableOpacity>
-              ) : null}
+              ))
+            ) : selectedDistributor.phone ? (
+              <TouchableOpacity style={styles.infoRowThemed} onPress={() => Linking.openURL(`tel:${selectedDistributor.phone}`)}>
+                <View style={[styles.infoIconContainer, { backgroundColor: colors.error + '15' }]}>
+                  <Ionicons name="call" size={18} color={colors.error} />
+                </View>
+                <Text style={[styles.infoTextThemed, { color: colors.text }]}>{selectedDistributor.phone}</Text>
+                <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} />
+              </TouchableOpacity>
+            ) : null}
 
-              {/* Email */}
-              {selectedDistributor.contact_email && (
-                <TouchableOpacity style={styles.infoRow} onPress={() => Linking.openURL(`mailto:${selectedDistributor.contact_email}`)}>
-                  <Ionicons name="mail" size={20} color="#EF4444" />
-                  <Text style={styles.infoText}>{selectedDistributor.contact_email}</Text>
-                  <Ionicons name="chevron-forward" size={16} color="#EF4444" />
-                </TouchableOpacity>
-              )}
+            {/* Email */}
+            {selectedDistributor.contact_email && (
+              <TouchableOpacity style={styles.infoRowThemed} onPress={() => Linking.openURL(`mailto:${selectedDistributor.contact_email}`)}>
+                <View style={[styles.infoIconContainer, { backgroundColor: colors.error + '15' }]}>
+                  <Ionicons name="mail" size={18} color={colors.error} />
+                </View>
+                <Text style={[styles.infoTextThemed, { color: colors.text }]}>{selectedDistributor.contact_email}</Text>
+                <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} />
+              </TouchableOpacity>
+            )}
 
-              {/* Website */}
-              {(selectedDistributor.website_url || selectedDistributor.website) && (
-                <TouchableOpacity style={styles.infoRow} onPress={() => Linking.openURL(selectedDistributor.website_url || selectedDistributor.website)}>
-                  <Ionicons name="globe" size={20} color="#EF4444" />
-                  <Text style={[styles.infoText, { flex: 1 }]} numberOfLines={1}>{selectedDistributor.website_url || selectedDistributor.website}</Text>
-                  <Ionicons name="chevron-forward" size={16} color="#EF4444" />
-                </TouchableOpacity>
-              )}
-            </BlurView>
+            {/* Website */}
+            {(selectedDistributor.website_url || selectedDistributor.website) && (
+              <TouchableOpacity style={styles.infoRowThemed} onPress={() => Linking.openURL(selectedDistributor.website_url || selectedDistributor.website)}>
+                <View style={[styles.infoIconContainer, { backgroundColor: colors.error + '15' }]}>
+                  <Ionicons name="globe" size={18} color={colors.error} />
+                </View>
+                <Text style={[styles.infoTextThemed, { color: colors.text, flex: 1 }]} numberOfLines={1}>
+                  {selectedDistributor.website_url || selectedDistributor.website}
+                </Text>
+                <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} />
+              </TouchableOpacity>
+            )}
           </View>
 
           {/* Address Section */}
           {(selectedDistributor.address || selectedDistributor.address_ar) && (
-            <View style={styles.infoCard}>
-              <BlurView intensity={15} tint="light" style={styles.infoBlur}>
-                <Text style={styles.infoSectionTitle}>{isRTL ? 'العنوان' : 'Address'}</Text>
-                <View style={styles.infoRow}>
-                  <Ionicons name="location" size={20} color="#EF4444" />
-                  <Text style={[styles.infoText, { flex: 1 }]}>{displayAddress}</Text>
+            <View style={[styles.infoCardThemed, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <Text style={[styles.infoSectionTitleThemed, { color: colors.textSecondary }]}>
+                {isRTL ? 'العنوان' : 'Address'}
+              </Text>
+              <View style={styles.infoRowThemed}>
+                <View style={[styles.infoIconContainer, { backgroundColor: colors.error + '15' }]}>
+                  <Ionicons name="location" size={18} color={colors.error} />
                 </View>
-                {/* Show both addresses if different */}
-                {selectedDistributor.address_ar && selectedDistributor.address && selectedDistributor.address !== selectedDistributor.address_ar && (
-                  <View style={[styles.infoRow, { marginTop: 8 }]}>
-                    <Ionicons name="location-outline" size={20} color="#EF4444" />
-                    <Text style={[styles.infoText, { flex: 1, fontStyle: 'italic' }]}>
-                      {isRTL ? selectedDistributor.address : selectedDistributor.address_ar}
-                    </Text>
+                <Text style={[styles.infoTextThemed, { color: colors.text, flex: 1 }]}>{displayAddress}</Text>
+              </View>
+              {selectedDistributor.address_ar && selectedDistributor.address && selectedDistributor.address !== selectedDistributor.address_ar && (
+                <View style={[styles.infoRowThemed, { marginTop: 8 }]}>
+                  <View style={[styles.infoIconContainer, { backgroundColor: colors.error + '10' }]}>
+                    <Ionicons name="location-outline" size={18} color={colors.textSecondary} />
                   </View>
-                )}
-              </BlurView>
+                  <Text style={[styles.infoTextThemed, { color: colors.textSecondary, flex: 1, fontStyle: 'italic' }]}>
+                    {isRTL ? selectedDistributor.address : selectedDistributor.address_ar}
+                  </Text>
+                </View>
+              )}
             </View>
           )}
 
           {/* Description Section */}
           {(selectedDistributor.description || selectedDistributor.description_ar) && (
-            <View style={styles.descriptionCard}>
-              <BlurView intensity={15} tint="light" style={styles.descriptionBlur}>
-                <Text style={styles.descriptionTitle}>{isRTL ? 'الوصف' : 'Description'}</Text>
-                <Text style={styles.descriptionText}>{displayDescription}</Text>
-                {/* Show both descriptions if different */}
-                {selectedDistributor.description_ar && selectedDistributor.description && selectedDistributor.description !== selectedDistributor.description_ar && (
-                  <Text style={[styles.descriptionText, { marginTop: 12, fontStyle: 'italic', opacity: 0.8 }]}>
-                    {isRTL ? selectedDistributor.description : selectedDistributor.description_ar}
-                  </Text>
-                )}
-              </BlurView>
+            <View style={[styles.infoCardThemed, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <Text style={[styles.infoSectionTitleThemed, { color: colors.textSecondary }]}>
+                {isRTL ? 'الوصف' : 'Description'}
+              </Text>
+              <Text style={[styles.descriptionTextThemed, { color: colors.text }]}>{displayDescription}</Text>
+              {selectedDistributor.description_ar && selectedDistributor.description && selectedDistributor.description !== selectedDistributor.description_ar && (
+                <Text style={[styles.descriptionTextThemed, { color: colors.textSecondary, marginTop: 12, fontStyle: 'italic' }]}>
+                  {isRTL ? selectedDistributor.description : selectedDistributor.description_ar}
+                </Text>
+              )}
             </View>
           )}
 
           {/* Slider Images Gallery */}
           {selectedDistributor.slider_images && selectedDistributor.slider_images.length > 0 && (
-            <View style={styles.gallerySection}>
-              <Text style={styles.brandsSectionTitle}>{isRTL ? 'معرض الصور' : 'Image Gallery'}</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.brandsCarousel}>
+            <View style={styles.gallerySectionThemed}>
+              <Text style={[styles.sectionTitleThemed, { color: colors.text }]}>
+                {isRTL ? 'معرض الصور' : 'Image Gallery'}
+              </Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.galleryScrollContent}>
                 {selectedDistributor.slider_images.map((img: string, index: number) => (
-                  <View key={index} style={styles.galleryImageContainer}>
-                    <Image source={{ uri: img }} style={styles.galleryImage} />
+                  <View key={index} style={[styles.galleryImageContainerThemed, { backgroundColor: colors.surface }]}>
+                    <Image source={{ uri: img }} style={styles.galleryImageThemed} />
                   </View>
                 ))}
               </ScrollView>
@@ -345,18 +365,18 @@ export default function DistributorsScreen() {
 
           {/* Linked Brands Carousel */}
           {linkedBrandObjects.length > 0 && (
-            <View style={styles.brandsSection}>
-              <Text style={styles.brandsSectionTitle}>{isRTL ? 'ماركات السيارات المرتبطة' : 'Linked Car Brands'}</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.brandsCarousel}>
+            <View style={styles.brandsSectionThemed}>
+              <Text style={[styles.sectionTitleThemed, { color: colors.text }]}>
+                {isRTL ? 'ماركات السيارات المرتبطة' : 'Linked Car Brands'}
+              </Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.brandsScrollContent}>
                 {linkedBrandObjects.map((brand: any) => (
-                  <TouchableOpacity key={brand.id} style={styles.brandCircle}>
-                    {brand.logo || brand.image ? (
-                      <Image source={{ uri: brand.logo || brand.image }} style={styles.brandImage} />
-                    ) : (
-                      <Ionicons name="car-sport" size={24} color="#EF4444" />
-                    )}
-                    <Text style={styles.brandName} numberOfLines={1}>{isRTL && brand.name_ar ? brand.name_ar : brand.name}</Text>
-                  </TouchableOpacity>
+                  <BrandCardHorizontal
+                    key={brand.id}
+                    brand={brand}
+                    type="car"
+                    onPress={() => router.push(`/search?car_brand_id=${brand.id}`)}
+                  />
                 ))}
               </ScrollView>
             </View>
