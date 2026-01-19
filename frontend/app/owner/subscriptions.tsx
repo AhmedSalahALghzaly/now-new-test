@@ -398,56 +398,93 @@ export default function SubscriptionsScreen() {
                       onPress={() => handleRequestPress(req)}
                       activeOpacity={0.7}
                     >
-                      <BlurView intensity={15} tint="light" style={styles.cardBlur}>
-                        <View style={[styles.avatar, { backgroundColor: req.status === 'approved' ? 'rgba(16,185,129,0.2)' : 'rgba(245,158,11,0.2)' }]}>
-                          <Ionicons 
-                            name={req.status === 'approved' ? 'checkmark-circle' : 'mail'} 
-                            size={24} 
-                            color={req.status === 'approved' ? '#10B981' : '#F59E0B'} 
-                          />
-                        </View>
-                        <View style={styles.info}>
-                          <Text style={styles.name}>{req.customer_name}</Text>
-                          {/* Task 2: Clickable email with copy button */}
-                          {customerEmail && (
-                            <View style={styles.emailRow}>
-                              <TouchableOpacity 
-                                onPress={(e) => {
-                                  e.stopPropagation();
-                                  if (customer) {
-                                    navigateToCustomerProfile(customer.id);
-                                  }
-                                }}
-                              >
-                                <Text style={[styles.email, customer && styles.emailClickable]} numberOfLines={1}>
-                                  {customerEmail}
-                                </Text>
-                              </TouchableOpacity>
-                              <TouchableOpacity 
-                                onPress={(e) => {
-                                  e.stopPropagation();
-                                  copyToClipboard(customerEmail);
-                                }}
-                                style={styles.copyButton}
-                              >
-                                <Ionicons name="copy-outline" size={14} color="rgba(255,255,255,0.7)" />
-                              </TouchableOpacity>
+                      <BlurView intensity={15} tint="light" style={styles.requestCardBlur}>
+                        {/* Top Row: Avatar + Name + Actions */}
+                        <View style={styles.requestTopRow}>
+                          <View style={[styles.avatar, { backgroundColor: req.status === 'approved' ? 'rgba(16,185,129,0.2)' : 'rgba(245,158,11,0.2)' }]}>
+                            <Ionicons 
+                              name={req.status === 'approved' ? 'checkmark-circle' : 'mail'} 
+                              size={24} 
+                              color={req.status === 'approved' ? '#10B981' : '#F59E0B'} 
+                            />
+                          </View>
+                          <View style={styles.requestNameSection}>
+                            <Text style={styles.name}>{req.customer_name}</Text>
+                            <View style={styles.requestSubInfo}>
+                              <Text style={styles.phone}>{req.phone}</Text>
+                              <Text style={styles.requestDot}>•</Text>
+                              <Text style={styles.date}>{req.governorate}</Text>
                             </View>
-                          )}
-                          <Text style={styles.phone}>{req.phone}</Text>
-                          <Text style={styles.date}>{req.governorate}</Text>
-                        </View>
-                        <View style={styles.actionButtons}>
-                          {req.status === 'pending' && (
+                          </View>
+                          <View style={styles.actionButtons}>
+                            {req.status === 'pending' && (
+                              <TouchableOpacity 
+                                style={styles.approveButton}
+                                onPress={(e) => {
+                                  e.stopPropagation();
+                                  handleApproveRequest(req.id);
+                                }}
+                              >
+                                <Ionicons name="checkmark" size={18} color="#FFF" />
+                              </TouchableOpacity>
+                            )}
                             <TouchableOpacity 
-                              style={styles.approveButton}
+                              style={styles.profileButton}
                               onPress={(e) => {
                                 e.stopPropagation();
-                                handleApproveRequest(req.id);
+                                if (customer) {
+                                  navigateToCustomerProfile(customer.id);
+                                } else {
+                                  handleRequestPress(req);
+                                }
                               }}
                             >
-                              <Ionicons name="checkmark" size={18} color="#FFF" />
+                              <Ionicons name="person" size={18} color="#FFF" />
                             </TouchableOpacity>
+                            {req.status === 'approved' && (
+                              <View style={styles.approvedBadge}>
+                                <Ionicons name="checkmark-circle" size={14} color="#10B981" />
+                              </View>
+                            )}
+                          </View>
+                        </View>
+                        
+                        {/* Center Row: Email with Copy (Professional Display) */}
+                        {customerEmail && (
+                          <View style={styles.emailCenterRow}>
+                            <View style={styles.emailIconContainer}>
+                              <Ionicons name="mail" size={14} color="#60A5FA" />
+                            </View>
+                            <TouchableOpacity 
+                              style={styles.emailTouchable}
+                              onPress={(e) => {
+                                e.stopPropagation();
+                                if (customer) {
+                                  navigateToCustomerProfile(customer.id);
+                                }
+                              }}
+                            >
+                              <Text style={[styles.emailCenterText, customer && styles.emailClickable]} numberOfLines={1}>
+                                {customerEmail}
+                              </Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity 
+                              onPress={(e) => {
+                                e.stopPropagation();
+                                copyToClipboard(customerEmail);
+                              }}
+                              style={styles.copyButtonCenter}
+                            >
+                              <Ionicons name="copy-outline" size={16} color="#60A5FA" />
+                              <Text style={styles.copyText}>{isRTL ? 'نسخ' : 'Copy'}</Text>
+                            </TouchableOpacity>
+                          </View>
+                        )}
+                      </BlurView>
+                    </TouchableOpacity>
+                  </VoidDeleteGesture>
+                );
+              })
                           )}
                           {/* Always show profile button for requests */}
                           <TouchableOpacity 
