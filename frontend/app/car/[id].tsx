@@ -153,6 +153,39 @@ export default function CarModelDetailScreen() {
           </TouchableOpacity>
         )}
 
+        {/* Premium Subscribe Button - Only visible for non-subscribers */}
+        {showSubscribeButton && (
+          <TouchableOpacity
+            style={styles.subscribeButtonContainer}
+            onPress={() => router.push('/subscription-request')}
+            activeOpacity={0.9}
+          >
+            <LinearGradient
+              colors={['#FFD700', '#FFA500', '#FF8C00']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.subscribeGradient}
+            >
+              <View style={styles.subscribeContent}>
+                <View style={styles.subscribeIconContainer}>
+                  <Ionicons name="star" size={28} color="#FFF" />
+                </View>
+                <View style={styles.subscribeTextContainer}>
+                  <Text style={styles.subscribeTitle}>
+                    {language === 'ar' ? 'اشترك الآن' : 'Subscribe Now'}
+                  </Text>
+                  <Text style={styles.subscribeSubtitle}>
+                    {language === 'ar' ? 'احصل على مزايا حصرية' : 'Get exclusive benefits'}
+                  </Text>
+                </View>
+                <View style={styles.subscribeArrowContainer}>
+                  <Ionicons name="chevron-forward" size={20} color="#FFF" />
+                </View>
+              </View>
+            </LinearGradient>
+          </TouchableOpacity>
+        )}
+
         {/* Car Info */}
         <View style={styles.infoContainer}>
           {/* Brand Badge - Clickable */}
