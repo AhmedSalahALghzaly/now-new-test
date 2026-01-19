@@ -635,17 +635,20 @@ const styles = StyleSheet.create({
   },
   distributorTextContainer: {
     flex: 1,
+    alignItems: 'center',
   },
   distributorLabel: {
     fontSize: 11,
     fontWeight: '500',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+    textAlign: 'center',
   },
   distributorName: {
     fontSize: 16,
     fontWeight: '700',
     marginTop: 2,
+    textAlign: 'center',
   },
   distributorArrowContainer: {
     width: 32,
