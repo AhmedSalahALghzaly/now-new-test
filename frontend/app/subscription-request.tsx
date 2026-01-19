@@ -108,6 +108,11 @@ export default function SubscriptionRequestScreen() {
     if (!formData.customer_name.trim()) {
       newErrors.customer_name = isRTL ? 'الاسم مطلوب' : 'Name is required';
     }
+    if (!formData.email.trim()) {
+      newErrors.email = isRTL ? 'البريد الإلكتروني مطلوب' : 'Email is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = isRTL ? 'بريد إلكتروني غير صالح' : 'Invalid email address';
+    }
     if (!formData.phone.trim()) {
       newErrors.phone = isRTL ? 'رقم الهاتف مطلوب' : 'Phone is required';
     } else if (!/^[0-9]{10,11}$/.test(formData.phone.replace(/\s/g, ''))) {
