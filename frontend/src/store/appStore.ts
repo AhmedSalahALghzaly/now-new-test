@@ -298,6 +298,7 @@ export const useAppStore = create<AppState>()(
       customers: [],
       orders: [],
       dashboardLayout: [],
+      subscriptionStatus: 'none',
 
       // Auth Actions
       setUser: (user, token = null) => {
