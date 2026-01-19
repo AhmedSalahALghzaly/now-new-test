@@ -435,6 +435,55 @@ export default function ModelsAdmin() {
             </Text>
           </View>
 
+          {/* Catalog PDF Upload Section */}
+          <View style={styles.fieldGroup}>
+            <Text style={[styles.fieldLabel, { color: colors.text }]}>
+              {language === 'ar' ? 'كتالوج الموديل (PDF)' : 'Model Catalog (PDF)'}
+            </Text>
+            <TouchableOpacity
+              style={[styles.catalogUploadButton, { backgroundColor: '#FFD70015', borderColor: '#FFD70050' }]}
+              onPress={pickCatalogPdf}
+            >
+              <View style={styles.catalogUploadContent}>
+                <View style={styles.catalogIconContainer}>
+                  <Ionicons name="document-text" size={24} color="#FFD700" />
+                </View>
+                <View style={styles.catalogTextContainer}>
+                  {catalogPdfName ? (
+                    <>
+                      <Text style={[styles.catalogFileName, { color: colors.text }]} numberOfLines={1}>
+                        {catalogPdfName}
+                      </Text>
+                      <Text style={styles.catalogSelectedText}>
+                        {language === 'ar' ? 'تم اختيار الملف' : 'File selected'}
+                      </Text>
+                    </>
+                  ) : (
+                    <>
+                      <Text style={styles.catalogUploadText}>
+                        {language === 'ar' ? 'اضغط لاختيار ملف PDF' : 'Tap to select PDF file'}
+                      </Text>
+                      <Text style={[styles.catalogHelperText, { color: colors.textSecondary }]}>
+                        {language === 'ar' ? 'للمشتركين فقط' : 'For subscribers only'}
+                      </Text>
+                    </>
+                  )}
+                </View>
+                {catalogPdfName && (
+                  <TouchableOpacity 
+                    style={styles.catalogRemoveButton}
+                    onPress={() => {
+                      setCatalogPdf(null);
+                      setCatalogPdfName('');
+                    }}
+                  >
+                    <Ionicons name="close-circle" size={22} color="#EF4444" />
+                  </TouchableOpacity>
+                )}
+              </View>
+            </TouchableOpacity>
+          </View>
+
           {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
           <TouchableOpacity
