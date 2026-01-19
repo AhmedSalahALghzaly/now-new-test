@@ -13,6 +13,7 @@ import {
   Modal,
   Dimensions,
   Linking,
+  Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
@@ -20,6 +21,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
+import * as Clipboard from 'expo-clipboard';
 import { useAppStore } from '../../src/store/appStore';
 import { subscriberApi, subscriptionRequestApi } from '../../src/services/api';
 import { VoidDeleteGesture } from '../../src/components/ui/VoidDeleteGesture';
@@ -27,6 +29,7 @@ import { ErrorCapsule } from '../../src/components/ui/ErrorCapsule';
 import { ConfettiEffect } from '../../src/components/ui/ConfettiEffect';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
 
 type TabType = 'subscribers' | 'requests';
 
