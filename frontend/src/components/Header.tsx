@@ -53,15 +53,25 @@ export const Header: React.FC<HeaderProps> = ({
   const currentMood = useAppStore((state) => state.currentMood);
   const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
   const subscribers = useAppStore((state) => state.subscribers) || [];
+  const subscriptionStatus = useAppStore((state) => state.subscriptionStatus);
+  const checkSubscriptionStatus = useAppStore((state) => state.checkSubscriptionStatus);
 
   // Check if current user is a subscriber (by email or phone)
   const isUserSubscriber = useMemo(() => {
+    if (subscriptionStatus === 'subscriber') return true;
     if (!user) return false;
     return subscribers.some((sub: any) => 
       (user.email && sub.email?.toLowerCase() === user.email?.toLowerCase()) ||
       (user.phone && sub.phone === user.phone)
     );
-  }, [user, subscribers]);
+  }, [user, subscribers, subscriptionStatus]);
+
+  // Check subscription status when user logs in
+  useEffect(() => {
+    if (user?.email || user?.phone) {
+      checkSubscriptionStatus(user.email, user.phone);
+    }
+  }, [user?.email, user?.phone]);
 
   // State for search, notifications (mood switcher removed)
   const [showSearchModal, setShowSearchModal] = useState(false);
