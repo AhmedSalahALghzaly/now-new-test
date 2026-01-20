@@ -242,99 +242,107 @@ export default function CustomersAdmin() {
               </Text>
             </View>
           ) : (
-            customers.map((customer) => (
-              <TouchableOpacity 
-                key={customer.user_id} 
-                style={[styles.customerItem, { borderColor: colors.border }]}
-                onPress={() => openCustomerProfile(customer, 'profile')}
-                activeOpacity={0.7}
-              >
-                {/* Avatar */}
-                <View style={[styles.avatar, { backgroundColor: NEON_NIGHT_THEME.primary + '20' }]}>
-                  {customer.picture ? (
-                    <Image source={{ uri: customer.picture }} style={styles.avatarImage} />
-                  ) : (
-                    <Text style={[styles.avatarText, { color: NEON_NIGHT_THEME.primary }]}>
-                      {(customer.name || customer.email || '?')[0].toUpperCase()}
-                    </Text>
-                  )}
-                </View>
+            <View style={styles.flashListContainer}>
+              <FlashList
+                data={customers}
+                renderItem={({ item: customer }) => (
+                  <TouchableOpacity 
+                    style={[styles.customerItem, { borderColor: colors.border }]}
+                    onPress={() => openCustomerProfile(customer, 'profile')}
+                    activeOpacity={0.7}
+                  >
+                    {/* Avatar */}
+                    <View style={[styles.avatar, { backgroundColor: NEON_NIGHT_THEME.primary + '20' }]}>
+                      {customer.picture ? (
+                        <Image source={{ uri: customer.picture }} style={styles.avatarImage} />
+                      ) : (
+                        <Text style={[styles.avatarText, { color: NEON_NIGHT_THEME.primary }]}>
+                          {(customer.name || customer.email || '?')[0].toUpperCase()}
+                        </Text>
+                      )}
+                    </View>
 
-                {/* Customer Info */}
-                <View style={styles.customerInfo}>
-                  <Text style={[styles.customerName, { color: colors.text }]}>
-                    {customer.name || customer.email?.split('@')[0] || 'Unknown'}
-                  </Text>
-                  <View style={[styles.customerMeta, isRTL && styles.rowReverse]}>
-                    <Ionicons name="mail-outline" size={12} color={colors.textSecondary} />
-                    <Text style={[styles.customerEmail, { color: colors.textSecondary }]} numberOfLines={1}>
-                      {customer.email}
-                    </Text>
-                  </View>
-                  {customer.phone && (
-                    <View style={[styles.customerMeta, isRTL && styles.rowReverse]}>
-                      <Ionicons name="call-outline" size={12} color={colors.textSecondary} />
-                      <Text style={[styles.customerPhone, { color: colors.textSecondary }]}>
-                        {customer.phone}
+                    {/* Customer Info */}
+                    <View style={styles.customerInfo}>
+                      <Text style={[styles.customerName, { color: colors.text }]}>
+                        {customer.name || customer.email?.split('@')[0] || 'Unknown'}
+                      </Text>
+                      <View style={[styles.customerMeta, isRTL && styles.rowReverse]}>
+                        <Ionicons name="mail-outline" size={12} color={colors.textSecondary} />
+                        <Text style={[styles.customerEmail, { color: colors.textSecondary }]} numberOfLines={1}>
+                          {customer.email}
+                        </Text>
+                      </View>
+                      {customer.phone && (
+                        <View style={[styles.customerMeta, isRTL && styles.rowReverse]}>
+                          <Ionicons name="call-outline" size={12} color={colors.textSecondary} />
+                          <Text style={[styles.customerPhone, { color: colors.textSecondary }]}>
+                            {customer.phone}
+                          </Text>
+                        </View>
+                      )}
+                      <Text style={[styles.customerDate, { color: colors.textSecondary }]}>
+                        {language === 'ar' ? 'انضم:' : 'Joined:'} {formatDate(customer.created_at)}
                       </Text>
                     </View>
-                  )}
-                  <Text style={[styles.customerDate, { color: colors.textSecondary }]}>
-                    {language === 'ar' ? 'انضم:' : 'Joined:'} {formatDate(customer.created_at)}
-                  </Text>
-                </View>
 
-                {/* Action Icons */}
-                <View style={styles.actionIcons}>
-                  {/* Real-Time Order Status Indicator */}
-                  <View style={styles.statusIndicatorWrapper}>
-                    <OrderStatusIndicator 
-                      status={customerOrderStatus[customer.id]?.status || 'no_active_order'}
-                      activeOrderCount={customerOrderStatus[customer.id]?.activeCount || 0}
-                      size={24}
-                    />
-                  </View>
+                    {/* Action Icons */}
+                    <View style={styles.actionIcons}>
+                      {/* Real-Time Order Status Indicator */}
+                      <View style={styles.statusIndicatorWrapper}>
+                        <OrderStatusIndicator 
+                          status={customerOrderStatus[customer.id]?.status || 'no_active_order'}
+                          activeOrderCount={customerOrderStatus[customer.id]?.activeCount || 0}
+                          size={24}
+                        />
+                      </View>
 
-                  {/* Quick Actions */}
-                  <TouchableOpacity 
-                    style={[styles.iconBtn, { backgroundColor: '#EF4444' + '20' }]}
-                    onPress={(e) => { e.stopPropagation(); openCustomerProfile(customer, 'favorites'); }}
-                  >
-                    <Ionicons name="heart" size={16} color="#EF4444" />
+                      {/* Quick Actions */}
+                      <TouchableOpacity 
+                        style={[styles.iconBtn, { backgroundColor: '#EF4444' + '20' }]}
+                        onPress={(e) => { e.stopPropagation(); openCustomerProfile(customer, 'favorites'); }}
+                      >
+                        <Ionicons name="heart" size={16} color="#EF4444" />
+                      </TouchableOpacity>
+
+                      <TouchableOpacity 
+                        style={[styles.iconBtn, { backgroundColor: NEON_NIGHT_THEME.primary + '20' }]}
+                        onPress={(e) => { e.stopPropagation(); openCustomerProfile(customer, 'cart'); }}
+                      >
+                        <Ionicons name="cart" size={16} color={NEON_NIGHT_THEME.primary} />
+                      </TouchableOpacity>
+
+                      <TouchableOpacity 
+                        style={[styles.iconBtn, { backgroundColor: '#10B981' + '20' }]}
+                        onPress={(e) => { e.stopPropagation(); handleViewOrders(customer); }}
+                      >
+                        <Ionicons name="receipt" size={16} color="#10B981" />
+                      </TouchableOpacity>
+
+                      {/* View Details */}
+                      <TouchableOpacity 
+                        style={[styles.iconBtn, { backgroundColor: colors.surface }]}
+                        onPress={(e) => { e.stopPropagation(); openCustomerProfile(customer, 'profile'); }}
+                      >
+                        <Ionicons name="eye" size={18} color={colors.text} />
+                      </TouchableOpacity>
+
+                      {/* Delete */}
+                      <TouchableOpacity
+                        style={[styles.iconBtn, { backgroundColor: colors.error + '20' }]}
+                        onPress={(e) => { e.stopPropagation(); handleDelete(customer.user_id); }}
+                      >
+                        <Ionicons name="trash" size={16} color={colors.error} />
+                      </TouchableOpacity>
+                    </View>
                   </TouchableOpacity>
-
-                  <TouchableOpacity 
-                    style={[styles.iconBtn, { backgroundColor: NEON_NIGHT_THEME.primary + '20' }]}
-                    onPress={(e) => { e.stopPropagation(); openCustomerProfile(customer, 'cart'); }}
-                  >
-                    <Ionicons name="cart" size={16} color={NEON_NIGHT_THEME.primary} />
-                  </TouchableOpacity>
-
-                  <TouchableOpacity 
-                    style={[styles.iconBtn, { backgroundColor: '#10B981' + '20' }]}
-                    onPress={(e) => { e.stopPropagation(); handleViewOrders(customer); }}
-                  >
-                    <Ionicons name="receipt" size={16} color="#10B981" />
-                  </TouchableOpacity>
-
-                  {/* View Details */}
-                  <TouchableOpacity 
-                    style={[styles.iconBtn, { backgroundColor: colors.surface }]}
-                    onPress={(e) => { e.stopPropagation(); openCustomerProfile(customer, 'profile'); }}
-                  >
-                    <Ionicons name="eye" size={18} color={colors.text} />
-                  </TouchableOpacity>
-
-                  {/* Delete */}
-                  <TouchableOpacity
-                    style={[styles.iconBtn, { backgroundColor: colors.error + '20' }]}
-                    onPress={(e) => { e.stopPropagation(); handleDelete(customer.user_id); }}
-                  >
-                    <Ionicons name="trash" size={16} color={colors.error} />
-                  </TouchableOpacity>
-                </View>
-              </TouchableOpacity>
-            ))
+                )}
+                keyExtractor={(customer) => customer.user_id || customer.id}
+                estimatedItemSize={100}
+                scrollEnabled={false}
+                extraData={customerOrderStatus}
+              />
+            </View>
           )}
         </View>
       </ScrollView>
