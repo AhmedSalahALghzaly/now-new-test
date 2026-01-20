@@ -1,6 +1,6 @@
 /**
  * Customers Management Screen - With Toggle Logic & Real-Time Status Indicators
- * OPTIMIZED: Uses FlashList for high-performance customer list rendering
+ * OPTIMIZED: Uses FlashList as primary scroll container (fixes nested ScrollView)
  */
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import {
@@ -132,6 +132,173 @@ export default function CustomersScreen() {
     router.push(`/admin/customers?customerId=${userId}`);
   };
 
+  // List Header Component with header, stats, and toggle
+  const ListHeaderComponent = () => (
+    <>
+      {/* Header */}
+      <View style={[styles.header, isRTL && styles.headerRTL]}>
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+          <Ionicons name={isRTL ? 'arrow-forward' : 'arrow-back'} size={24} color="#FFF" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>
+          {isRTL ? 'العملاء' : 'Customers'}
+        </Text>
+        <View style={styles.headerBadge}>
+          <Text style={styles.headerBadgeText}>{customers.length}</Text>
+        </View>
+      </View>
+
+      {/* Stats Row */}
+      <View style={styles.statsRow}>
+        <View style={styles.statBox}>
+          <Ionicons name="people" size={24} color="#3B82F6" />
+          <Text style={styles.statValue}>{totals.totalCustomers}</Text>
+          <Text style={styles.statLabel}>{isRTL ? 'العملاء' : 'Customers'}</Text>
+        </View>
+        <View style={styles.statBox}>
+          <Ionicons name="receipt" size={24} color="#10B981" />
+          <Text style={styles.statValue}>{totals.totalOrders}</Text>
+          <Text style={styles.statLabel}>{isRTL ? 'الطلبات' : 'Orders'}</Text>
+        </View>
+        <View style={styles.statBox}>
+          <Ionicons name="cash" size={24} color="#F59E0B" />
+          <Text style={styles.statValue}>{(totals.totalValue / 1000).toFixed(1)}K</Text>
+          <Text style={styles.statLabel}>{isRTL ? 'ج.م' : 'EGP'}</Text>
+        </View>
+      </View>
+
+      {/* Sort Toggle */}
+      <View style={styles.toggleContainer}>
+        <TouchableOpacity
+          style={[
+            styles.toggleButton,
+            sortMode === 'most_purchased' && styles.toggleActive,
+          ]}
+          onPress={() => setSortMode('most_purchased')}
+        >
+          <Ionicons 
+            name="cart" 
+            size={18} 
+            color={sortMode === 'most_purchased' ? '#FFF' : 'rgba(255,255,255,0.6)'} 
+          />
+          <Text style={[
+            styles.toggleText,
+            sortMode === 'most_purchased' && styles.toggleTextActive,
+          ]}>
+            {isRTL ? 'الأكثر شراءً' : 'Most Purchased'}
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[
+            styles.toggleButton,
+            sortMode === 'highest_value' && styles.toggleActive,
+          ]}
+          onPress={() => setSortMode('highest_value')}
+        >
+          <Ionicons 
+            name="trending-up" 
+            size={18} 
+            color={sortMode === 'highest_value' ? '#FFF' : 'rgba(255,255,255,0.6)'} 
+          />
+          <Text style={[
+            styles.toggleText,
+            sortMode === 'highest_value' && styles.toggleTextActive,
+          ]}>
+            {isRTL ? 'أعلى قيمة' : 'Highest Value'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </>
+  );
+
+  // Empty component for FlashList
+  const ListEmptyComponent = () => {
+    if (loading) {
+      return (
+        <View>
+          {[1, 2, 3, 4, 5].map(i => (
+            <View key={i} style={styles.skeletonCard}>
+              <ListItemSkeleton />
+            </View>
+          ))}
+        </View>
+      );
+    }
+    return (
+      <View style={styles.emptyState}>
+        <Ionicons name="people-outline" size={64} color="rgba(255,255,255,0.5)" />
+        <Text style={styles.emptyText}>
+          {isRTL ? 'لا يوجد عملاء بعد' : 'No customers yet'}
+        </Text>
+      </View>
+    );
+  };
+
+  // Footer component to add bottom padding
+  const ListFooterComponent = () => (
+    <View style={{ height: insets.bottom + 40 }} />
+  );
+
+  // Render item for FlashList
+  const renderCustomerItem = ({ item: customer, index }: { item: any; index: number }) => {
+    const userId = customer.user_id || customer.id;
+    const orderInfo = customerOrderStatus[userId] || { status: 'no_active_order', activeCount: 0 };
+    
+    return (
+      <TouchableOpacity 
+        style={styles.customerCard}
+        onPress={() => handleCustomerPress(customer)}
+        activeOpacity={0.7}
+      >
+        <BlurView intensity={15} tint="light" style={styles.cardBlur}>
+          {/* Rank Badge */}
+          <View style={[
+            styles.rankBadge,
+            index === 0 && styles.rankGold,
+            index === 1 && styles.rankSilver,
+            index === 2 && styles.rankBronze,
+          ]}>
+            <Text style={styles.rankText}>#{index + 1}</Text>
+          </View>
+
+          {/* Real-Time Status Indicator */}
+          <View style={styles.statusIndicatorContainer}>
+            <OrderStatusIndicator 
+              status={orderInfo.status}
+              activeOrderCount={orderInfo.activeCount}
+              size={24}
+            />
+          </View>
+
+          <View style={styles.customerAvatar}>
+            <Ionicons name="person" size={24} color="#3B82F6" />
+          </View>
+          
+          <View style={styles.customerInfo}>
+            <Text style={styles.customerName}>{customer.name || customer.email}</Text>
+            <Text style={styles.customerEmail}>{customer.email}</Text>
+            <View style={styles.customerStats}>
+              <View style={styles.customerStat}>
+                <Ionicons name="cart" size={12} color="#10B981" />
+                <Text style={styles.customerStatText}>
+                  {customer.order_count || customer.total_orders || 0} {isRTL ? 'طلبات' : 'orders'}
+                </Text>
+              </View>
+              <View style={styles.customerStat}>
+                <Ionicons name="cash" size={12} color="#F59E0B" />
+                <Text style={styles.customerStatText}>
+                  {(customer.total_spent || customer.total_value || 0).toLocaleString()} {isRTL ? 'ج.م' : 'EGP'}
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          <Ionicons name="chevron-forward" size={20} color="rgba(255,255,255,0.5)" />
+        </BlurView>
+      </TouchableOpacity>
+    );
+  };
+
   return (
     <View style={styles.container}>
       <LinearGradient
@@ -139,173 +306,21 @@ export default function CustomersScreen() {
         style={StyleSheet.absoluteFill}
       />
 
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top }]}
+      {/* FlashList as primary scroll container - FIXES NESTED SCROLLVIEW */}
+      <FlashList
+        data={loading ? [] : sortedCustomers}
+        renderItem={renderCustomerItem}
+        keyExtractor={(item, index) => item.id || String(index)}
+        estimatedItemSize={90}
+        ListHeaderComponent={ListHeaderComponent}
+        ListEmptyComponent={ListEmptyComponent}
+        ListFooterComponent={ListFooterComponent}
+        contentContainerStyle={{ paddingTop: insets.top, paddingHorizontal: 16 }}
+        extraData={customerOrderStatus}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FFF" />
         }
-      >
-        {/* Header */}
-        <View style={[styles.header, isRTL && styles.headerRTL]}>
-          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <Ionicons name={isRTL ? 'arrow-forward' : 'arrow-back'} size={24} color="#FFF" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>
-            {isRTL ? 'العملاء' : 'Customers'}
-          </Text>
-          <View style={styles.headerBadge}>
-            <Text style={styles.headerBadgeText}>{customers.length}</Text>
-          </View>
-        </View>
-
-        {/* Stats Row */}
-        <View style={styles.statsRow}>
-          <View style={styles.statBox}>
-            <Ionicons name="people" size={24} color="#3B82F6" />
-            <Text style={styles.statValue}>{totals.totalCustomers}</Text>
-            <Text style={styles.statLabel}>{isRTL ? 'العملاء' : 'Customers'}</Text>
-          </View>
-          <View style={styles.statBox}>
-            <Ionicons name="receipt" size={24} color="#10B981" />
-            <Text style={styles.statValue}>{totals.totalOrders}</Text>
-            <Text style={styles.statLabel}>{isRTL ? 'الطلبات' : 'Orders'}</Text>
-          </View>
-          <View style={styles.statBox}>
-            <Ionicons name="cash" size={24} color="#F59E0B" />
-            <Text style={styles.statValue}>{(totals.totalValue / 1000).toFixed(1)}K</Text>
-            <Text style={styles.statLabel}>{isRTL ? 'ج.م' : 'EGP'}</Text>
-          </View>
-        </View>
-
-        {/* Sort Toggle */}
-        <View style={styles.toggleContainer}>
-          <TouchableOpacity
-            style={[
-              styles.toggleButton,
-              sortMode === 'most_purchased' && styles.toggleActive,
-            ]}
-            onPress={() => setSortMode('most_purchased')}
-          >
-            <Ionicons 
-              name="cart" 
-              size={18} 
-              color={sortMode === 'most_purchased' ? '#FFF' : 'rgba(255,255,255,0.6)'} 
-            />
-            <Text style={[
-              styles.toggleText,
-              sortMode === 'most_purchased' && styles.toggleTextActive,
-            ]}>
-              {isRTL ? 'الأكثر شراءً' : 'Most Purchased'}
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.toggleButton,
-              sortMode === 'highest_value' && styles.toggleActive,
-            ]}
-            onPress={() => setSortMode('highest_value')}
-          >
-            <Ionicons 
-              name="trending-up" 
-              size={18} 
-              color={sortMode === 'highest_value' ? '#FFF' : 'rgba(255,255,255,0.6)'} 
-            />
-            <Text style={[
-              styles.toggleText,
-              sortMode === 'highest_value' && styles.toggleTextActive,
-            ]}>
-              {isRTL ? 'أعلى قيمة' : 'Highest Value'}
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Customer List - OPTIMIZED with FlashList */}
-        <View style={styles.listContainer}>
-          {loading ? (
-            [1, 2, 3, 4, 5].map(i => (
-              <View key={i} style={styles.skeletonCard}>
-                <ListItemSkeleton />
-              </View>
-            ))
-          ) : sortedCustomers.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Ionicons name="people-outline" size={64} color="rgba(255,255,255,0.5)" />
-              <Text style={styles.emptyText}>
-                {isRTL ? 'لا يوجد عملاء بعد' : 'No customers yet'}
-              </Text>
-            </View>
-          ) : (
-            <FlashList
-              data={sortedCustomers}
-              renderItem={({ item: customer, index }) => {
-                const userId = customer.user_id || customer.id;
-                const orderInfo = customerOrderStatus[userId] || { status: 'no_active_order', activeCount: 0 };
-                
-                return (
-                  <TouchableOpacity 
-                    style={styles.customerCard}
-                    onPress={() => handleCustomerPress(customer)}
-                    activeOpacity={0.7}
-                  >
-                    <BlurView intensity={15} tint="light" style={styles.cardBlur}>
-                      {/* Rank Badge */}
-                      <View style={[
-                        styles.rankBadge,
-                        index === 0 && styles.rankGold,
-                        index === 1 && styles.rankSilver,
-                        index === 2 && styles.rankBronze,
-                      ]}>
-                        <Text style={styles.rankText}>#{index + 1}</Text>
-                      </View>
-
-                      {/* Real-Time Status Indicator */}
-                      <View style={styles.statusIndicatorContainer}>
-                        <OrderStatusIndicator 
-                          status={orderInfo.status}
-                          activeOrderCount={orderInfo.activeCount}
-                          size={24}
-                        />
-                      </View>
-
-                      <View style={styles.customerAvatar}>
-                        <Ionicons name="person" size={24} color="#3B82F6" />
-                      </View>
-                      
-                      <View style={styles.customerInfo}>
-                        <Text style={styles.customerName}>{customer.name || customer.email}</Text>
-                        <Text style={styles.customerEmail}>{customer.email}</Text>
-                        <View style={styles.customerStats}>
-                          <View style={styles.customerStat}>
-                            <Ionicons name="cart" size={12} color="#10B981" />
-                            <Text style={styles.customerStatText}>
-                              {customer.order_count || customer.total_orders || 0} {isRTL ? 'طلبات' : 'orders'}
-                            </Text>
-                          </View>
-                          <View style={styles.customerStat}>
-                            <Ionicons name="cash" size={12} color="#F59E0B" />
-                            <Text style={styles.customerStatText}>
-                              {(customer.total_spent || customer.total_value || 0).toLocaleString()} {isRTL ? 'ج.م' : 'EGP'}
-                            </Text>
-                          </View>
-                        </View>
-                      </View>
-
-                      <Ionicons name="chevron-forward" size={20} color="rgba(255,255,255,0.5)" />
-                    </BlurView>
-                  </TouchableOpacity>
-                );
-              }}
-              keyExtractor={(customer, index) => customer.id || String(index)}
-              estimatedItemSize={90}
-              scrollEnabled={false}
-              extraData={customerOrderStatus}
-            />
-          )}
-        </View>
-
-        <View style={{ height: insets.bottom + 40 }} />
-      </ScrollView>
+      />
     </View>
   );
 }
@@ -320,11 +335,11 @@ const styles = StyleSheet.create({
   headerTitle: { flex: 1, fontSize: 24, fontWeight: '700', color: '#FFF' },
   headerBadge: { backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 12 },
   headerBadgeText: { color: '#FFF', fontWeight: '600' },
-  statsRow: { flexDirection: 'row', gap: 12, marginTop: 8 },
+  statsRow: { flexDirection: 'row', gap: 12, marginTop: 8, marginBottom: 16 },
   statBox: { flex: 1, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 16, padding: 16, alignItems: 'center' },
   statValue: { fontSize: 24, fontWeight: '700', color: '#FFF', marginTop: 8 },
   statLabel: { fontSize: 12, color: 'rgba(255,255,255,0.7)', marginTop: 4 },
-  toggleContainer: { flexDirection: 'row', backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 12, padding: 4, marginTop: 20 },
+  toggleContainer: { flexDirection: 'row', backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 12, padding: 4, marginBottom: 16 },
   toggleButton: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 12, borderRadius: 10, gap: 6 },
   toggleActive: { backgroundColor: 'rgba(59,130,246,0.8)' },
   toggleText: { fontSize: 13, color: 'rgba(255,255,255,0.6)', fontWeight: '600' },

@@ -1,7 +1,7 @@
 /**
  * Orders Screen with Status Filtering
  * Deep-linked from Dashboard metrics
- * OPTIMIZED: Uses FlashList for high-performance order list rendering
+ * OPTIMIZED: Uses FlashList as primary scroll container (fixes nested ScrollView)
  */
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import {
@@ -156,126 +156,136 @@ export default function OrdersScreen() {
     });
   };
 
+  // List Header Component with header and filters
+  const ListHeaderComponent = () => (
+    <>
+      {/* Header */}
+      <View style={[styles.header, isRTL && styles.headerRTL]}>
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+          <Ionicons name={isRTL ? 'arrow-forward' : 'arrow-back'} size={24} color="#FFF" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>{isRTL ? 'الطلبات' : 'Orders'}</Text>
+        <View style={styles.headerBadge}>
+          <Text style={styles.headerBadgeText}>{filteredOrders.length}</Text>
+        </View>
+      </View>
+
+      {/* Filter Pills */}
+      <ScrollView 
+        horizontal 
+        showsHorizontalScrollIndicator={false} 
+        contentContainerStyle={styles.filterContainer}
+      >
+        {filters.map((filter) => (
+          <TouchableOpacity
+            key={filter.id}
+            style={[
+              styles.filterPill,
+              activeFilter === filter.id && { backgroundColor: filter.color },
+            ]}
+            onPress={() => handleFilterChange(filter.id)}
+          >
+            <Text style={[
+              styles.filterText,
+              activeFilter === filter.id && styles.filterTextActive,
+            ]}>
+              {isRTL ? filter.labelAr : filter.labelEn}
+            </Text>
+            <View style={[
+              styles.filterBadge,
+              activeFilter === filter.id && styles.filterBadgeActive,
+            ]}>
+              <Text style={[
+                styles.filterBadgeText,
+                activeFilter === filter.id && styles.filterBadgeTextActive,
+              ]}>
+                {statusCounts[filter.id]}
+              </Text>
+            </View>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+    </>
+  );
+
+  // Empty component for FlashList
+  const ListEmptyComponent = () => (
+    <View style={styles.emptyState}>
+      <Ionicons name="receipt-outline" size={64} color="rgba(255,255,255,0.5)" />
+      <Text style={styles.emptyText}>
+        {isRTL ? 'لا توجد طلبات' : 'No orders found'}
+      </Text>
+    </View>
+  );
+
+  // Footer component to add bottom padding
+  const ListFooterComponent = () => (
+    <View style={{ height: insets.bottom + 40 }} />
+  );
+
+  // Render item for FlashList
+  const renderOrderItem = ({ item: order }: { item: any }) => {
+    const statusConfig = STATUS_CONFIG[order.status] || STATUS_CONFIG.pending;
+    return (
+      <TouchableOpacity 
+        style={styles.orderCard}
+        onPress={() => router.push(`/admin/order/${order.id}`)}
+        activeOpacity={0.7}
+      >
+        <BlurView intensity={15} tint="light" style={styles.orderBlur}>
+          {/* Status Badge */}
+          <View style={[styles.statusBadge, { backgroundColor: statusConfig.color + '30' }]}>
+            <Ionicons name={statusConfig.icon as any} size={16} color={statusConfig.color} />
+            <Text style={[styles.statusText, { color: statusConfig.color }]}>
+              {isRTL ? statusConfig.labelAr : statusConfig.labelEn}
+            </Text>
+          </View>
+
+          {/* Order Info */}
+          <View style={styles.orderInfo}>
+            <View style={styles.orderHeader}>
+              <Text style={styles.orderId}>#{order.id?.slice(-8) || 'N/A'}</Text>
+              <Text style={styles.orderDate}>{formatDate(order.created_at)}</Text>
+            </View>
+            
+            <Text style={styles.customerName} numberOfLines={1}>
+              {order.customer_name || order.customer_email || (isRTL ? 'عميل' : 'Customer')}
+            </Text>
+
+            <View style={styles.orderFooter}>
+              <Text style={styles.itemCount}>
+                {order.items?.length || 0} {isRTL ? 'منتجات' : 'items'}
+              </Text>
+              <Text style={styles.orderTotal}>
+                {(order.total || 0).toLocaleString()} {isRTL ? 'ج.م' : 'EGP'}
+              </Text>
+            </View>
+          </View>
+
+          <Ionicons name="chevron-forward" size={20} color="rgba(255,255,255,0.4)" />
+        </BlurView>
+      </TouchableOpacity>
+    );
+  };
+
   return (
     <View style={styles.container}>
       <LinearGradient colors={['#1E1E3F', '#2D2D5F', '#3D3D7F']} style={StyleSheet.absoluteFill} />
 
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top }]}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FFF" />}
-      >
-        {/* Header */}
-        <View style={[styles.header, isRTL && styles.headerRTL]}>
-          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <Ionicons name={isRTL ? 'arrow-forward' : 'arrow-back'} size={24} color="#FFF" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>{isRTL ? 'الطلبات' : 'Orders'}</Text>
-          <View style={styles.headerBadge}>
-            <Text style={styles.headerBadgeText}>{filteredOrders.length}</Text>
-          </View>
-        </View>
-
-        {/* Filter Pills */}
-        <ScrollView 
-          horizontal 
-          showsHorizontalScrollIndicator={false} 
-          contentContainerStyle={styles.filterContainer}
-        >
-          {filters.map((filter) => (
-            <TouchableOpacity
-              key={filter.id}
-              style={[
-                styles.filterPill,
-                activeFilter === filter.id && { backgroundColor: filter.color },
-              ]}
-              onPress={() => handleFilterChange(filter.id)}
-            >
-              <Text style={[
-                styles.filterText,
-                activeFilter === filter.id && styles.filterTextActive,
-              ]}>
-                {isRTL ? filter.labelAr : filter.labelEn}
-              </Text>
-              <View style={[
-                styles.filterBadge,
-                activeFilter === filter.id && styles.filterBadgeActive,
-              ]}>
-                <Text style={[
-                  styles.filterBadgeText,
-                  activeFilter === filter.id && styles.filterBadgeTextActive,
-                ]}>
-                  {statusCounts[filter.id]}
-                </Text>
-              </View>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-
-        {/* Orders List - OPTIMIZED with FlashList */}
-        <View style={styles.listContainer}>
-          {filteredOrders.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Ionicons name="receipt-outline" size={64} color="rgba(255,255,255,0.5)" />
-              <Text style={styles.emptyText}>
-                {isRTL ? 'لا توجد طلبات' : 'No orders found'}
-              </Text>
-            </View>
-          ) : (
-            <FlashList
-              data={filteredOrders}
-              renderItem={({ item: order }) => {
-                const statusConfig = STATUS_CONFIG[order.status] || STATUS_CONFIG.pending;
-                return (
-                  <TouchableOpacity 
-                    style={styles.orderCard}
-                    onPress={() => router.push(`/admin/order/${order.id}`)}
-                    activeOpacity={0.7}
-                  >
-                    <BlurView intensity={15} tint="light" style={styles.orderBlur}>
-                      {/* Status Badge */}
-                      <View style={[styles.statusBadge, { backgroundColor: statusConfig.color + '30' }]}>
-                        <Ionicons name={statusConfig.icon as any} size={16} color={statusConfig.color} />
-                        <Text style={[styles.statusText, { color: statusConfig.color }]}>
-                          {isRTL ? statusConfig.labelAr : statusConfig.labelEn}
-                        </Text>
-                      </View>
-
-                      {/* Order Info */}
-                      <View style={styles.orderInfo}>
-                        <View style={styles.orderHeader}>
-                          <Text style={styles.orderId}>#{order.id?.slice(-8) || 'N/A'}</Text>
-                          <Text style={styles.orderDate}>{formatDate(order.created_at)}</Text>
-                        </View>
-                        
-                        <Text style={styles.customerName} numberOfLines={1}>
-                          {order.customer_name || order.customer_email || (isRTL ? 'عميل' : 'Customer')}
-                        </Text>
-
-                        <View style={styles.orderFooter}>
-                          <Text style={styles.itemCount}>
-                            {order.items?.length || 0} {isRTL ? 'منتجات' : 'items'}
-                          </Text>
-                          <Text style={styles.orderTotal}>
-                            {(order.total || 0).toLocaleString()} {isRTL ? 'ج.م' : 'EGP'}
-                          </Text>
-                        </View>
-                      </View>
-
-                      <Ionicons name="chevron-forward" size={20} color="rgba(255,255,255,0.4)" />
-                    </BlurView>
-                  </TouchableOpacity>
-                );
-              }}
-              keyExtractor={(order) => order.id}
-              estimatedItemSize={100}
-              scrollEnabled={false}
-            />
-          )}
-        </View>
-
-        <View style={{ height: insets.bottom + 40 }} />
-      </ScrollView>
+      {/* FlashList as primary scroll container - FIXES NESTED SCROLLVIEW */}
+      <FlashList
+        data={filteredOrders}
+        renderItem={renderOrderItem}
+        keyExtractor={(item) => item.id}
+        estimatedItemSize={100}
+        ListHeaderComponent={ListHeaderComponent}
+        ListEmptyComponent={ListEmptyComponent}
+        ListFooterComponent={ListFooterComponent}
+        contentContainerStyle={{ paddingTop: insets.top, paddingHorizontal: 16 }}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FFF" />
+        }
+      />
     </View>
   );
 }
@@ -290,7 +300,7 @@ const styles = StyleSheet.create({
   headerTitle: { flex: 1, fontSize: 24, fontWeight: '700', color: '#FFF' },
   headerBadge: { backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 12 },
   headerBadgeText: { color: '#FFF', fontWeight: '600' },
-  filterContainer: { paddingVertical: 8, gap: 8 },
+  filterContainer: { paddingVertical: 8, gap: 8, marginBottom: 8 },
   filterPill: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.1)', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, marginRight: 8, gap: 6 },
   filterText: { fontSize: 13, color: 'rgba(255,255,255,0.7)', fontWeight: '600' },
   filterTextActive: { color: '#FFF' },
