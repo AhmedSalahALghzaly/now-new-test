@@ -1,14 +1,12 @@
 /**
  * FavoritesTab - Favorites list display tab
  * Shows user's favorite products with actions
- * OPTIMIZED: Uses FlashList for superior memory and rendering performance
+ * FIXED: Proper scroll handling - items are touchable and scrollable
  */
 import React, { useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
-import { FlashList } from '@shopify/flash-list';
+import { View, Text, StyleSheet, Pressable, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { GlassCard } from '../ui/GlassCard';
 import { EmptyState } from '../ui/EmptyState';
 import { useTheme } from '../../hooks/useTheme';
 import { useTranslation } from '../../hooks/useTranslation';
@@ -35,12 +33,17 @@ export const FavoritesTab: React.FC<FavoritesTabProps> = ({
 
   const safeFavorites = Array.isArray(favorites) ? favorites : [];
 
-  // Memoized render item for FlashList
-  const renderFavoriteItem = useCallback(({ item }: { item: any }) => (
-    <TouchableOpacity
-      style={[styles.productCard, { borderColor: colors.border }]}
+  // Render each favorite item - using regular map instead of FlashList
+  // This allows proper scroll propagation to parent ScrollView
+  const renderFavoriteItem = (item: any, index: number) => (
+    <Pressable
+      key={item.product_id || item.id || index}
+      style={({ pressed }) => [
+        styles.productCard,
+        { borderColor: colors.border },
+        pressed && { opacity: 0.7, backgroundColor: colors.surface }
+      ]}
       onPress={() => router.push(`/product/${item.product_id || item.product?.id}`)}
-      activeOpacity={0.7}
     >
       <View style={[styles.productThumb, { backgroundColor: colors.surface }]}>
         {item.product?.image_url ? (
@@ -65,34 +68,34 @@ export const FavoritesTab: React.FC<FavoritesTabProps> = ({
       </View>
 
       <View style={styles.productActions}>
-        <TouchableOpacity
-          style={[styles.iconActionBtn, { backgroundColor: NEON_NIGHT_THEME.primary }]}
-          onPress={(e) => {
-            e.stopPropagation();
-            onAddToCart(item.product);
-          }}
+        <Pressable
+          style={({ pressed }) => [
+            styles.iconActionBtn,
+            { backgroundColor: NEON_NIGHT_THEME.primary },
+            pressed && { opacity: 0.7 }
+          ]}
+          onPress={() => onAddToCart(item.product)}
         >
           <Ionicons name="cart-outline" size={18} color="#FFF" />
-        </TouchableOpacity>
+        </Pressable>
         {!isAdminView && (
-          <TouchableOpacity
-            style={[styles.iconActionBtn, { backgroundColor: '#EF4444' }]}
-            onPress={(e) => {
-              e.stopPropagation();
-              onToggleFavorite(item.product_id || item.product?.id);
-            }}
+          <Pressable
+            style={({ pressed }) => [
+              styles.iconActionBtn,
+              { backgroundColor: '#EF4444' },
+              pressed && { opacity: 0.7 }
+            ]}
+            onPress={() => onToggleFavorite(item.product_id || item.product?.id)}
           >
             <Ionicons name="heart-dislike-outline" size={18} color="#FFF" />
-          </TouchableOpacity>
+          </Pressable>
         )}
       </View>
-    </TouchableOpacity>
-  ), [colors, language, isAdminView, router, onAddToCart, onToggleFavorite]);
-
-  const keyExtractor = useCallback((item: any) => item.product_id || item.id || String(Math.random()), []);
+    </Pressable>
+  );
 
   return (
-    <GlassCard>
+    <View style={[styles.container, { backgroundColor: colors.card, borderColor: colors.border }]}>
       <View style={[styles.sectionHeader, isRTL && styles.rowReverse]}>
         <Text style={[styles.sectionTitle, { color: colors.text }]}>
           {language === 'ar' ? 'المنتجات المفضلة' : 'Favorite Products'}
@@ -109,20 +112,20 @@ export const FavoritesTab: React.FC<FavoritesTabProps> = ({
         />
       ) : (
         <View style={styles.listContainer}>
-          <FlashList
-            data={safeFavorites}
-            renderItem={renderFavoriteItem}
-            keyExtractor={keyExtractor}
-            estimatedItemSize={80}
-            scrollEnabled={false}
-          />
+          {safeFavorites.map(renderFavoriteItem)}
         </View>
       )}
-    </GlassCard>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
+  container: {
+    marginHorizontal: 16,
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+  },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -147,7 +150,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   listContainer: {
-    minHeight: 100,
+    minHeight: 50,
   },
   productCard: {
     flexDirection: 'row',

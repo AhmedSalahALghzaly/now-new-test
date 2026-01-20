@@ -1,14 +1,12 @@
 /**
  * CartTab - Shopping cart display and management tab
  * Shows cart items with quantity controls and order summary
- * OPTIMIZED: Uses FlashList for superior memory and rendering performance
+ * FIXED: Proper scroll handling - items are touchable and scrollable
  */
-import React, { useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
-import { FlashList } from '@shopify/flash-list';
+import React from 'react';
+import { View, Text, StyleSheet, Pressable, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { GlassCard } from '../ui/GlassCard';
 import { EmptyState } from '../ui/EmptyState';
 import { useTheme } from '../../hooks/useTheme';
 import { useTranslation } from '../../hooks/useTranslation';
@@ -45,17 +43,21 @@ export const CartTab: React.FC<CartTabProps> = ({
 
   const safeCartItems = Array.isArray(cartItems) ? cartItems : [];
 
-  // Memoized render item for FlashList
-  const renderCartItem = useCallback(({ item, index }: { item: any; index: number }) => {
+  // Render each cart item - using map for proper scroll propagation
+  const renderCartItem = (item: any, index: number) => {
     const originalPrice = item.original_unit_price || item.product?.price || 0;
     const finalPrice = item.final_unit_price || item.product?.price || 0;
     const hasDiscount = originalPrice > finalPrice;
     const lineTotal = finalPrice * item.quantity;
 
     return (
-      <View style={[styles.cartItem, { borderColor: colors.border }]}>
-        <TouchableOpacity
-          style={[styles.productThumb, { backgroundColor: colors.surface }]}
+      <View key={item.product_id || index} style={[styles.cartItem, { borderColor: colors.border }]}>
+        <Pressable
+          style={({ pressed }) => [
+            styles.productThumb,
+            { backgroundColor: colors.surface },
+            pressed && { opacity: 0.7 }
+          ]}
           onPress={() => router.push(`/product/${item.product_id}`)}
         >
           {item.product?.image_url ? (
@@ -68,7 +70,7 @@ export const CartTab: React.FC<CartTabProps> = ({
               <Ionicons name="gift" size={10} color="#FFF" />
             </View>
           )}
-        </TouchableOpacity>
+        </Pressable>
 
         <View style={styles.cartItemInfo}>
           <Text style={[styles.productName, { color: colors.text }]} numberOfLines={2}>
@@ -100,27 +102,31 @@ export const CartTab: React.FC<CartTabProps> = ({
 
           <View style={[styles.quantityRow, isRTL && styles.rowReverse]}>
             <View style={[styles.quantityControls, { borderColor: colors.border }]}>
-              <TouchableOpacity
-                style={styles.qtyBtn}
+              <Pressable
+                style={({ pressed }) => [styles.qtyBtn, pressed && { backgroundColor: colors.surface }]}
                 onPress={() => onUpdateQuantity(item.product_id, item.quantity - 1)}
               >
                 <Ionicons name="remove" size={16} color={colors.text} />
-              </TouchableOpacity>
+              </Pressable>
               <Text style={[styles.qtyText, { color: colors.text }]}>{item.quantity}</Text>
-              <TouchableOpacity
-                style={styles.qtyBtn}
+              <Pressable
+                style={({ pressed }) => [styles.qtyBtn, pressed && { backgroundColor: colors.surface }]}
                 onPress={() => onUpdateQuantity(item.product_id, item.quantity + 1)}
               >
                 <Ionicons name="add" size={16} color={colors.text} />
-              </TouchableOpacity>
+              </Pressable>
             </View>
 
-            <TouchableOpacity
-              style={[styles.removeBtn, { borderColor: '#EF4444' }]}
+            <Pressable
+              style={({ pressed }) => [
+                styles.removeBtn,
+                { borderColor: '#EF4444' },
+                pressed && { backgroundColor: '#EF444420' }
+              ]}
               onPress={() => onRemove(item.product_id)}
             >
               <Ionicons name="trash-outline" size={16} color="#EF4444" />
-            </TouchableOpacity>
+            </Pressable>
           </View>
 
           <Text style={[styles.lineTotal, { color: colors.text }]}>
@@ -129,13 +135,11 @@ export const CartTab: React.FC<CartTabProps> = ({
         </View>
       </View>
     );
-  }, [colors, language, isRTL, router, onUpdateQuantity, onRemove]);
-
-  const keyExtractor = useCallback((item: any, index: number) => item.product_id || String(index), []);
+  };
 
   return (
     <>
-      <GlassCard>
+      <View style={[styles.container, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <View style={[styles.sectionHeader, isRTL && styles.rowReverse]}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>
             {language === 'ar' ? 'سلة التسوق' : 'Shopping Cart'}
@@ -154,20 +158,14 @@ export const CartTab: React.FC<CartTabProps> = ({
           />
         ) : (
           <View style={styles.listContainer}>
-            <FlashList
-              data={safeCartItems}
-              renderItem={renderCartItem}
-              keyExtractor={keyExtractor}
-              estimatedItemSize={150}
-              scrollEnabled={false}
-            />
+            {safeCartItems.map(renderCartItem)}
           </View>
         )}
-      </GlassCard>
+      </View>
 
       {/* Order Summary */}
       {safeCartItems.length > 0 && (
-        <GlassCard style={{ marginTop: 12 }}>
+        <View style={[styles.summaryContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <Text style={[styles.sectionTitle, { color: colors.text, marginBottom: 12 }]}>
             {language === 'ar' ? 'ملخص الطلب' : 'Order Summary'}
           </Text>
@@ -223,8 +221,12 @@ export const CartTab: React.FC<CartTabProps> = ({
             </Text>
           </View>
 
-          <TouchableOpacity
-            style={[styles.checkoutBtn, { backgroundColor: NEON_NIGHT_THEME.primary }]}
+          <Pressable
+            style={({ pressed }) => [
+              styles.checkoutBtn,
+              { backgroundColor: NEON_NIGHT_THEME.primary },
+              pressed && { opacity: 0.8 }
+            ]}
             onPress={onCheckout}
           >
             <Ionicons name="card-outline" size={20} color="#FFF" />
@@ -232,14 +234,27 @@ export const CartTab: React.FC<CartTabProps> = ({
               {language === 'ar' ? 'المتابعة للدفع' : 'Proceed to Checkout'}
             </Text>
             <Ionicons name={isRTL ? 'arrow-back' : 'arrow-forward'} size={20} color="#FFF" />
-          </TouchableOpacity>
-        </GlassCard>
+          </Pressable>
+        </View>
       )}
     </>
   );
 };
 
 const styles = StyleSheet.create({
+  container: {
+    marginHorizontal: 16,
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+  },
+  summaryContainer: {
+    marginHorizontal: 16,
+    marginTop: 12,
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+  },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -264,7 +279,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   listContainer: {
-    minHeight: 100,
+    minHeight: 50,
   },
   cartItem: {
     flexDirection: 'row',

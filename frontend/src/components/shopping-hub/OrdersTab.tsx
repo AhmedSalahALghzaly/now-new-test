@@ -1,14 +1,12 @@
 /**
  * OrdersTab - Order history and status management tab
  * Shows orders with admin status update actions
- * OPTIMIZED: Uses FlashList for superior memory and rendering performance
+ * FIXED: Proper scroll handling - items are touchable and scrollable
  */
 import React, { useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { FlashList } from '@shopify/flash-list';
+import { View, Text, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { GlassCard } from '../ui/GlassCard';
 import { EmptyState } from '../ui/EmptyState';
 import { useTheme } from '../../hooks/useTheme';
 import { useTranslation } from '../../hooks/useTranslation';
@@ -54,8 +52,12 @@ const StatusActionButton: React.FC<{
   const isLoading = updatingOrderId === `${orderId}_${status}`;
 
   return (
-    <TouchableOpacity
-      style={[styles.statusActionBtn, { backgroundColor: color }]}
+    <Pressable
+      style={({ pressed }) => [
+        styles.statusActionBtn,
+        { backgroundColor: color },
+        pressed && { opacity: 0.7 }
+      ]}
       onPress={onPress}
       disabled={updatingOrderId !== null}
     >
@@ -67,7 +69,7 @@ const StatusActionButton: React.FC<{
           <Text style={styles.statusActionText}>{language === 'ar' ? labelAr : label}</Text>
         </>
       )}
-    </TouchableOpacity>
+    </Pressable>
   );
 };
 
@@ -96,17 +98,20 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({
     });
   }, [language]);
 
-  // Memoized render item for FlashList
-  const renderOrderItem = useCallback(({ item: order }: { item: any }) => {
+  // Render each order item - using map for proper scroll propagation
+  const renderOrderItem = (order: any, index: number) => {
     const statusInfo = getStatusInfo(order.status);
     return (
-      <View style={[styles.orderCard, { borderColor: colors.border }]}>
+      <View key={order.id || index} style={[styles.orderCard, { borderColor: colors.border }]}>
         <View style={[styles.orderHeader, isRTL && styles.rowReverse]}>
-          <TouchableOpacity onPress={() => router.push(`/admin/order/${order.id}`)}>
+          <Pressable
+            style={({ pressed }) => pressed && { opacity: 0.7 }}
+            onPress={() => router.push(`/admin/order/${order.id}`)}
+          >
             <Text style={[styles.orderNumber, { color: NEON_NIGHT_THEME.primary }]}>
               {order.order_number}
             </Text>
-          </TouchableOpacity>
+          </Pressable>
           <View style={[styles.statusBadge, { backgroundColor: statusInfo.color }]}>
             <Ionicons name={statusInfo.icon as any} size={12} color="#FFF" />
             <Text style={styles.statusText}>
@@ -198,12 +203,10 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({
         )}
       </View>
     );
-  }, [colors, language, isRTL, canEditOrderStatus, updatingOrderId, router, formatDate, onUpdateStatus]);
-
-  const keyExtractor = useCallback((item: any) => item.id || String(Math.random()), []);
+  };
 
   return (
-    <GlassCard>
+    <View style={[styles.container, { backgroundColor: colors.card, borderColor: colors.border }]}>
       <View style={[styles.sectionHeader, isRTL && styles.rowReverse]}>
         <Text style={[styles.sectionTitle, { color: colors.text }]}>
           {language === 'ar' ? 'سجل الطلبات' : 'Order History'}
@@ -220,20 +223,20 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({
         />
       ) : (
         <View style={styles.listContainer}>
-          <FlashList
-            data={safeOrders}
-            renderItem={renderOrderItem}
-            keyExtractor={keyExtractor}
-            estimatedItemSize={120}
-            scrollEnabled={false}
-          />
+          {safeOrders.map(renderOrderItem)}
         </View>
       )}
-    </GlassCard>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
+  container: {
+    marginHorizontal: 16,
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+  },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -258,7 +261,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   listContainer: {
-    minHeight: 100,
+    minHeight: 50,
   },
   orderCard: {
     paddingVertical: 12,
