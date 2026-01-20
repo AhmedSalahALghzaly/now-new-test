@@ -1,9 +1,11 @@
 /**
  * OrdersTab - Order history and status management tab
  * Shows orders with admin status update actions
+ * OPTIMIZED: Uses FlashList for superior memory and rendering performance
  */
-import React from 'react';
+import React, { useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { GlassCard } from '../ui/GlassCard';
@@ -82,7 +84,7 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({
 
   const safeOrders = Array.isArray(orders) ? orders : [];
 
-  const formatDate = (dateStr: string) => {
+  const formatDate = useCallback((dateStr: string) => {
     if (!dateStr) return '';
     const date = new Date(dateStr);
     return date.toLocaleDateString(language === 'ar' ? 'ar-EG' : 'en-US', {
@@ -92,7 +94,113 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({
       hour: '2-digit',
       minute: '2-digit',
     });
-  };
+  }, [language]);
+
+  // Memoized render item for FlashList
+  const renderOrderItem = useCallback(({ item: order }: { item: any }) => {
+    const statusInfo = getStatusInfo(order.status);
+    return (
+      <View style={[styles.orderCard, { borderColor: colors.border }]}>
+        <View style={[styles.orderHeader, isRTL && styles.rowReverse]}>
+          <TouchableOpacity onPress={() => router.push(`/admin/order/${order.id}`)}>
+            <Text style={[styles.orderNumber, { color: NEON_NIGHT_THEME.primary }]}>
+              {order.order_number}
+            </Text>
+          </TouchableOpacity>
+          <View style={[styles.statusBadge, { backgroundColor: statusInfo.color }]}>
+            <Ionicons name={statusInfo.icon as any} size={12} color="#FFF" />
+            <Text style={styles.statusText}>
+              {language === 'ar' ? statusInfo.labelAr : statusInfo.label}
+            </Text>
+          </View>
+        </View>
+
+        <Text style={[styles.orderDate, { color: colors.textSecondary }]}>
+          {formatDate(order.created_at)}
+        </Text>
+
+        <View style={[styles.orderDetails, isRTL && styles.rowReverse]}>
+          <Text style={[styles.orderItems, { color: colors.textSecondary }]}>
+            {language === 'ar' ? `${order.items?.length || 0} منتج` : `${order.items?.length || 0} items`}
+          </Text>
+          <Text style={[styles.orderTotal, { color: colors.text }]}>
+            {order.total?.toFixed(0)} ج.م
+          </Text>
+        </View>
+
+        {/* Admin Status Actions */}
+        {canEditOrderStatus && order.status !== 'delivered' && order.status !== 'cancelled' && (
+          <View style={styles.orderActions}>
+            {order.status === 'pending' && (
+              <StatusActionButton
+                orderId={order.id}
+                status="preparing"
+                label="Prepare"
+                labelAr="تحضير"
+                icon="construct-outline"
+                color="#3B82F6"
+                updatingOrderId={updatingOrderId}
+                language={language}
+                onPress={() => onUpdateStatus(order.id, 'preparing')}
+              />
+            )}
+            {order.status === 'preparing' && (
+              <StatusActionButton
+                orderId={order.id}
+                status="shipped"
+                label="Ship"
+                labelAr="شحن"
+                icon="airplane-outline"
+                color="#EAB308"
+                updatingOrderId={updatingOrderId}
+                language={language}
+                onPress={() => onUpdateStatus(order.id, 'shipped')}
+              />
+            )}
+            {order.status === 'shipped' && (
+              <StatusActionButton
+                orderId={order.id}
+                status="out_for_delivery"
+                label="Out"
+                labelAr="في الطريق"
+                icon="car-outline"
+                color="#6B7280"
+                updatingOrderId={updatingOrderId}
+                language={language}
+                onPress={() => onUpdateStatus(order.id, 'out_for_delivery')}
+              />
+            )}
+            {order.status === 'out_for_delivery' && (
+              <StatusActionButton
+                orderId={order.id}
+                status="delivered"
+                label="Deliver"
+                labelAr="تسليم"
+                icon="checkmark-circle"
+                color="#10B981"
+                updatingOrderId={updatingOrderId}
+                language={language}
+                onPress={() => onUpdateStatus(order.id, 'delivered')}
+              />
+            )}
+            <StatusActionButton
+              orderId={order.id}
+              status="cancelled"
+              label="Cancel"
+              labelAr="إلغاء"
+              icon="close-circle"
+              color="#EF4444"
+              updatingOrderId={updatingOrderId}
+              language={language}
+              onPress={() => onUpdateStatus(order.id, 'cancelled')}
+            />
+          </View>
+        )}
+      </View>
+    );
+  }, [colors, language, isRTL, canEditOrderStatus, updatingOrderId, router, formatDate, onUpdateStatus]);
+
+  const keyExtractor = useCallback((item: any) => item.id || String(Math.random()), []);
 
   return (
     <GlassCard>
@@ -111,108 +219,15 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({
           title={language === 'ar' ? 'لا توجد طلبات' : 'No orders yet'}
         />
       ) : (
-        safeOrders.map((order: any) => {
-          const statusInfo = getStatusInfo(order.status);
-          return (
-            <View key={order.id} style={[styles.orderCard, { borderColor: colors.border }]}>
-              <View style={[styles.orderHeader, isRTL && styles.rowReverse]}>
-                <TouchableOpacity onPress={() => router.push(`/admin/order/${order.id}`)}>
-                  <Text style={[styles.orderNumber, { color: NEON_NIGHT_THEME.primary }]}>
-                    {order.order_number}
-                  </Text>
-                </TouchableOpacity>
-                <View style={[styles.statusBadge, { backgroundColor: statusInfo.color }]}>
-                  <Ionicons name={statusInfo.icon as any} size={12} color="#FFF" />
-                  <Text style={styles.statusText}>
-                    {language === 'ar' ? statusInfo.labelAr : statusInfo.label}
-                  </Text>
-                </View>
-              </View>
-
-              <Text style={[styles.orderDate, { color: colors.textSecondary }]}>
-                {formatDate(order.created_at)}
-              </Text>
-
-              <View style={[styles.orderDetails, isRTL && styles.rowReverse]}>
-                <Text style={[styles.orderItems, { color: colors.textSecondary }]}>
-                  {language === 'ar' ? `${order.items?.length || 0} منتج` : `${order.items?.length || 0} items`}
-                </Text>
-                <Text style={[styles.orderTotal, { color: colors.text }]}>
-                  {order.total?.toFixed(0)} ج.م
-                </Text>
-              </View>
-
-              {/* Admin Status Actions */}
-              {canEditOrderStatus && order.status !== 'delivered' && order.status !== 'cancelled' && (
-                <View style={styles.orderActions}>
-                  {order.status === 'pending' && (
-                    <StatusActionButton
-                      orderId={order.id}
-                      status="preparing"
-                      label="Prepare"
-                      labelAr="تحضير"
-                      icon="construct-outline"
-                      color="#3B82F6"
-                      updatingOrderId={updatingOrderId}
-                      language={language}
-                      onPress={() => onUpdateStatus(order.id, 'preparing')}
-                    />
-                  )}
-                  {order.status === 'preparing' && (
-                    <StatusActionButton
-                      orderId={order.id}
-                      status="shipped"
-                      label="Ship"
-                      labelAr="شحن"
-                      icon="airplane-outline"
-                      color="#EAB308"
-                      updatingOrderId={updatingOrderId}
-                      language={language}
-                      onPress={() => onUpdateStatus(order.id, 'shipped')}
-                    />
-                  )}
-                  {order.status === 'shipped' && (
-                    <StatusActionButton
-                      orderId={order.id}
-                      status="out_for_delivery"
-                      label="Out"
-                      labelAr="في الطريق"
-                      icon="car-outline"
-                      color="#6B7280"
-                      updatingOrderId={updatingOrderId}
-                      language={language}
-                      onPress={() => onUpdateStatus(order.id, 'out_for_delivery')}
-                    />
-                  )}
-                  {order.status === 'out_for_delivery' && (
-                    <StatusActionButton
-                      orderId={order.id}
-                      status="delivered"
-                      label="Deliver"
-                      labelAr="تسليم"
-                      icon="checkmark-circle"
-                      color="#10B981"
-                      updatingOrderId={updatingOrderId}
-                      language={language}
-                      onPress={() => onUpdateStatus(order.id, 'delivered')}
-                    />
-                  )}
-                  <StatusActionButton
-                    orderId={order.id}
-                    status="cancelled"
-                    label="Cancel"
-                    labelAr="إلغاء"
-                    icon="close-circle"
-                    color="#EF4444"
-                    updatingOrderId={updatingOrderId}
-                    language={language}
-                    onPress={() => onUpdateStatus(order.id, 'cancelled')}
-                  />
-                </View>
-              )}
-            </View>
-          );
-        })
+        <View style={styles.listContainer}>
+          <FlashList
+            data={safeOrders}
+            renderItem={renderOrderItem}
+            keyExtractor={keyExtractor}
+            estimatedItemSize={120}
+            scrollEnabled={false}
+          />
+        </View>
       )}
     </GlassCard>
   );
@@ -241,6 +256,9 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 12,
     fontWeight: '700',
+  },
+  listContainer: {
+    minHeight: 100,
   },
   orderCard: {
     paddingVertical: 12,
