@@ -1,9 +1,11 @@
 /**
  * CartTab - Shopping cart display and management tab
  * Shows cart items with quantity controls and order summary
+ * OPTIMIZED: Uses FlashList for superior memory and rendering performance
  */
-import React from 'react';
+import React, { useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { GlassCard } from '../ui/GlassCard';
@@ -43,6 +45,94 @@ export const CartTab: React.FC<CartTabProps> = ({
 
   const safeCartItems = Array.isArray(cartItems) ? cartItems : [];
 
+  // Memoized render item for FlashList
+  const renderCartItem = useCallback(({ item, index }: { item: any; index: number }) => {
+    const originalPrice = item.original_unit_price || item.product?.price || 0;
+    const finalPrice = item.final_unit_price || item.product?.price || 0;
+    const hasDiscount = originalPrice > finalPrice;
+    const lineTotal = finalPrice * item.quantity;
+
+    return (
+      <View style={[styles.cartItem, { borderColor: colors.border }]}>
+        <TouchableOpacity
+          style={[styles.productThumb, { backgroundColor: colors.surface }]}
+          onPress={() => router.push(`/product/${item.product_id}`)}
+        >
+          {item.product?.image_url ? (
+            <Image source={{ uri: item.product.image_url }} style={styles.productImage} />
+          ) : (
+            <Ionicons name="cube-outline" size={24} color={colors.textSecondary} />
+          )}
+          {item.bundle_group_id && (
+            <View style={[styles.bundleBadge, { backgroundColor: NEON_NIGHT_THEME.accent }]}>
+              <Ionicons name="gift" size={10} color="#FFF" />
+            </View>
+          )}
+        </TouchableOpacity>
+
+        <View style={styles.cartItemInfo}>
+          <Text style={[styles.productName, { color: colors.text }]} numberOfLines={2}>
+            {language === 'ar' ? item.product?.name_ar : item.product?.name}
+          </Text>
+          {item.product?.sku && (
+            <Text style={[styles.productSku, { color: colors.textSecondary }]}>
+              SKU: {item.product.sku}
+            </Text>
+          )}
+
+          <View style={[styles.priceRow, isRTL && styles.rowReverse]}>
+            {hasDiscount && (
+              <Text style={[styles.originalPrice, { color: colors.textSecondary }]}>
+                {originalPrice.toFixed(0)} ج.م
+              </Text>
+            )}
+            <Text style={[styles.finalPrice, { color: NEON_NIGHT_THEME.primary }]}>
+              {finalPrice.toFixed(0)} ج.م
+            </Text>
+            {hasDiscount && (
+              <View style={[styles.discountTag, { backgroundColor: '#10B981' }]}>
+                <Text style={styles.discountTagText}>
+                  -{Math.round(((originalPrice - finalPrice) / originalPrice) * 100)}%
+                </Text>
+              </View>
+            )}
+          </View>
+
+          <View style={[styles.quantityRow, isRTL && styles.rowReverse]}>
+            <View style={[styles.quantityControls, { borderColor: colors.border }]}>
+              <TouchableOpacity
+                style={styles.qtyBtn}
+                onPress={() => onUpdateQuantity(item.product_id, item.quantity - 1)}
+              >
+                <Ionicons name="remove" size={16} color={colors.text} />
+              </TouchableOpacity>
+              <Text style={[styles.qtyText, { color: colors.text }]}>{item.quantity}</Text>
+              <TouchableOpacity
+                style={styles.qtyBtn}
+                onPress={() => onUpdateQuantity(item.product_id, item.quantity + 1)}
+              >
+                <Ionicons name="add" size={16} color={colors.text} />
+              </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity
+              style={[styles.removeBtn, { borderColor: '#EF4444' }]}
+              onPress={() => onRemove(item.product_id)}
+            >
+              <Ionicons name="trash-outline" size={16} color="#EF4444" />
+            </TouchableOpacity>
+          </View>
+
+          <Text style={[styles.lineTotal, { color: colors.text }]}>
+            {language === 'ar' ? 'الإجمالي:' : 'Total:'} {lineTotal.toFixed(0)} ج.م
+          </Text>
+        </View>
+      </View>
+    );
+  }, [colors, language, isRTL, router, onUpdateQuantity, onRemove]);
+
+  const keyExtractor = useCallback((item: any, index: number) => item.product_id || String(index), []);
+
   return (
     <>
       <GlassCard>
@@ -63,90 +153,15 @@ export const CartTab: React.FC<CartTabProps> = ({
             onAction={() => router.push('/')}
           />
         ) : (
-          safeCartItems.map((item, index) => {
-            const originalPrice = item.original_unit_price || item.product?.price || 0;
-            const finalPrice = item.final_unit_price || item.product?.price || 0;
-            const hasDiscount = originalPrice > finalPrice;
-            const lineTotal = finalPrice * item.quantity;
-
-            return (
-              <View key={item.product_id || index} style={[styles.cartItem, { borderColor: colors.border }]}>
-                <TouchableOpacity
-                  style={[styles.productThumb, { backgroundColor: colors.surface }]}
-                  onPress={() => router.push(`/product/${item.product_id}`)}
-                >
-                  {item.product?.image_url ? (
-                    <Image source={{ uri: item.product.image_url }} style={styles.productImage} />
-                  ) : (
-                    <Ionicons name="cube-outline" size={24} color={colors.textSecondary} />
-                  )}
-                  {item.bundle_group_id && (
-                    <View style={[styles.bundleBadge, { backgroundColor: NEON_NIGHT_THEME.accent }]}>
-                      <Ionicons name="gift" size={10} color="#FFF" />
-                    </View>
-                  )}
-                </TouchableOpacity>
-
-                <View style={styles.cartItemInfo}>
-                  <Text style={[styles.productName, { color: colors.text }]} numberOfLines={2}>
-                    {language === 'ar' ? item.product?.name_ar : item.product?.name}
-                  </Text>
-                  {item.product?.sku && (
-                    <Text style={[styles.productSku, { color: colors.textSecondary }]}>
-                      SKU: {item.product.sku}
-                    </Text>
-                  )}
-
-                  <View style={[styles.priceRow, isRTL && styles.rowReverse]}>
-                    {hasDiscount && (
-                      <Text style={[styles.originalPrice, { color: colors.textSecondary }]}>
-                        {originalPrice.toFixed(0)} ج.م
-                      </Text>
-                    )}
-                    <Text style={[styles.finalPrice, { color: NEON_NIGHT_THEME.primary }]}>
-                      {finalPrice.toFixed(0)} ج.م
-                    </Text>
-                    {hasDiscount && (
-                      <View style={[styles.discountTag, { backgroundColor: '#10B981' }]}>
-                        <Text style={styles.discountTagText}>
-                          -{Math.round(((originalPrice - finalPrice) / originalPrice) * 100)}%
-                        </Text>
-                      </View>
-                    )}
-                  </View>
-
-                  <View style={[styles.quantityRow, isRTL && styles.rowReverse]}>
-                    <View style={[styles.quantityControls, { borderColor: colors.border }]}>
-                      <TouchableOpacity
-                        style={styles.qtyBtn}
-                        onPress={() => onUpdateQuantity(item.product_id, item.quantity - 1)}
-                      >
-                        <Ionicons name="remove" size={16} color={colors.text} />
-                      </TouchableOpacity>
-                      <Text style={[styles.qtyText, { color: colors.text }]}>{item.quantity}</Text>
-                      <TouchableOpacity
-                        style={styles.qtyBtn}
-                        onPress={() => onUpdateQuantity(item.product_id, item.quantity + 1)}
-                      >
-                        <Ionicons name="add" size={16} color={colors.text} />
-                      </TouchableOpacity>
-                    </View>
-
-                    <TouchableOpacity
-                      style={[styles.removeBtn, { borderColor: '#EF4444' }]}
-                      onPress={() => onRemove(item.product_id)}
-                    >
-                      <Ionicons name="trash-outline" size={16} color="#EF4444" />
-                    </TouchableOpacity>
-                  </View>
-
-                  <Text style={[styles.lineTotal, { color: colors.text }]}>
-                    {language === 'ar' ? 'الإجمالي:' : 'Total:'} {lineTotal.toFixed(0)} ج.م
-                  </Text>
-                </View>
-              </View>
-            );
-          })
+          <View style={styles.listContainer}>
+            <FlashList
+              data={safeCartItems}
+              renderItem={renderCartItem}
+              keyExtractor={keyExtractor}
+              estimatedItemSize={150}
+              scrollEnabled={false}
+            />
+          </View>
         )}
       </GlassCard>
 
@@ -247,6 +262,9 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 12,
     fontWeight: '700',
+  },
+  listContainer: {
+    minHeight: 100,
   },
   cartItem: {
     flexDirection: 'row',
