@@ -356,6 +356,7 @@ const styles = StyleSheet.create({
   contentContainer: { padding: 16 },
   breadcrumb: { flexDirection: 'row', alignItems: 'center', marginBottom: 16, gap: 8 },
   breadcrumbRTL: { flexDirection: 'row-reverse' },
+  flashListContainer: { minHeight: 200 },
   breadcrumbText: { fontSize: 14 },
   statsCard: { 
     borderRadius: 16, 
