@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback, memo } from 'react';
+import React, { useState, useMemo, useCallback, memo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, ActivityIndicator, Image, Modal, RefreshControl } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -6,12 +6,16 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../../src/hooks/useTheme';
 import { useTranslation } from '../../src/hooks/useTranslation';
-import { productsApi, productBrandsApi, categoriesApi, carModelsApi, carBrandsApi } from '../../src/services/api';
+import { productsApi } from '../../src/services/api';
 import { useAdminSync } from '../../src/services/adminSyncService';
-import { useDataCacheStore } from '../../src/store/useDataCacheStore';
 import { Header } from '../../src/components/Header';
 import { ImageUploader } from '../../src/components/ui/ImageUploader';
 import { Toast, SaveButton } from '../../src/components/ui/FormFeedback';
+import {
+  useAdminProductsQuery,
+  useProductMetadataQuery,
+  useAdminProductMutations,
+} from '../../src/hooks/queries';
 
 // ============================================================================
 // Memoized Product Item Component for Performance
