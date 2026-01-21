@@ -298,32 +298,7 @@ export default function CustomersAdmin() {
     refetch();
   }, [refetch]);
 
-  // Customer Profile Modal using UnifiedShoppingHub
-  if (showProfile && selectedCustomer) {
-    return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['bottom']}>
-        <Header 
-          title={selectedCustomer?.name || (language === 'ar' ? 'ملف العميل' : 'Customer Profile')} 
-          showBack 
-          showSearch={false} 
-          showCart={false} 
-        />
-        <UnifiedShoppingHub
-          customerId={selectedCustomer.id}
-          customerData={selectedCustomer}
-          isAdminView={true}
-          onClose={() => {
-            setShowProfile(false);
-            setSelectedCustomer(null);
-            refetch(); // Refresh list on close
-          }}
-          initialTab={initialTab}
-        />
-      </SafeAreaView>
-    );
-  }
-
-  // List Header Component
+  // List Header Component - MUST be declared before any conditional rendering
   const ListHeaderComponent = useCallback(() => (
     <View>
       {/* Breadcrumb */}
