@@ -103,10 +103,11 @@
 #====================================================================================================
 
 user_problem_statement: |
-  Fix 3 critical bugs in Al-Ghazaly Auto Parts e-commerce mobile app:
-  1. Bundle Offer Cart Logic Inconsistency - Need addBundleToCart function
-  2. Admin Delete Functionality Failure - Delete icons for promotions/bundles
-  3. Admin Panel Access for Newly Added Admins - Footer icon visibility
+  GitHub Project Import and Testing:
+  1. Clone and run lats-go project from GitHub
+  2. Run linting on entire application
+  3. Test admin/owner flows
+  4. Perform end-to-end testing for full coverage
 
 backend:
   - task: "Backend API v4.0 with new admin check-access endpoint"
