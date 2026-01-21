@@ -218,8 +218,9 @@ async def create_order(data: OrderCreate, request: Request):
     return serialize_doc(order_doc)
 
 @router.patch("/{order_id}/status")
+@router.put("/{order_id}/status")
 async def update_order_status(order_id: str, status: str, request: Request):
-    """Update order status"""
+    """Update order status (supports both PATCH and PUT)"""
     user = await get_current_user(request)
     role = await get_user_role(user) if user else "guest"
     if role not in ["owner", "partner", "admin"]:
