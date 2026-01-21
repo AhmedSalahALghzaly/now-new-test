@@ -399,11 +399,11 @@ export const DynamicOfferSlider: React.FC<DynamicOfferSliderProps> = ({
                                 }
                               ]} 
                             />
-                            {/* Icon */}
+                            {/* Icon - size reduced by 10% */}
                             <Animated.View style={{ transform: [{ rotate: spin }] }}>
                               <MaterialCommunityIcons 
                                 name="lightning-bolt-circle" 
-                                size={24} 
+                                size={22}  // Reduced from 24 by ~10%
                                 color="#1a1a2e" 
                               />
                             </Animated.View>
