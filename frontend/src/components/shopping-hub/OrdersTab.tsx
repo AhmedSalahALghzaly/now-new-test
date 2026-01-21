@@ -1,10 +1,11 @@
 /**
  * OrdersTab - Order history and status management tab
  * Shows orders with admin status update actions
- * FIXED: Proper scroll handling - items are touchable and scrollable
+ * REFACTORED: Uses FlashList for better performance on long lists
  */
 import React, { useCallback } from 'react';
 import { View, Text, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { EmptyState } from '../ui/EmptyState';
@@ -98,11 +99,11 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({
     });
   }, [language]);
 
-  // Render each order item - using map for proper scroll propagation
-  const renderOrderItem = (order: any, index: number) => {
+  // Render order item for FlashList
+  const renderOrderItem = useCallback(({ item: order, index }: { item: any; index: number }) => {
     const statusInfo = getStatusInfo(order.status);
     return (
-      <View key={order.id || index} style={[styles.orderCard, { borderColor: colors.border }]}>
+      <View style={[styles.orderCard, { borderColor: colors.border }]}>
         <View style={[styles.orderHeader, isRTL && styles.rowReverse]}>
           <Pressable
             style={({ pressed }) => pressed && { opacity: 0.7 }}
@@ -203,27 +204,46 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({
         )}
       </View>
     );
-  };
+  }, [colors, language, isRTL, canEditOrderStatus, updatingOrderId, formatDate, router, onUpdateStatus]);
+
+  // List header with section title
+  const ListHeaderComponent = useCallback(() => (
+    <View style={[styles.sectionHeader, isRTL && styles.rowReverse]}>
+      <Text style={[styles.sectionTitle, { color: colors.text }]}>
+        {language === 'ar' ? 'سجل الطلبات' : 'Order History'}
+      </Text>
+      <View style={[styles.countBadge, { backgroundColor: NEON_NIGHT_THEME.primary }]}>
+        <Text style={styles.countBadgeText}>{safeOrders.length}</Text>
+      </View>
+    </View>
+  ), [colors, language, isRTL, safeOrders.length]);
+
+  // Empty state
+  const ListEmptyComponent = useCallback(() => (
+    <EmptyState
+      icon="receipt-outline"
+      title={language === 'ar' ? 'لا توجد طلبات' : 'No orders yet'}
+    />
+  ), [language]);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.card, borderColor: colors.border }]}>
-      <View style={[styles.sectionHeader, isRTL && styles.rowReverse]}>
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>
-          {language === 'ar' ? 'سجل الطلبات' : 'Order History'}
-        </Text>
-        <View style={[styles.countBadge, { backgroundColor: NEON_NIGHT_THEME.primary }]}>
-          <Text style={styles.countBadgeText}>{safeOrders.length}</Text>
-        </View>
-      </View>
-
       {safeOrders.length === 0 ? (
-        <EmptyState
-          icon="receipt-outline"
-          title={language === 'ar' ? 'لا توجد طلبات' : 'No orders yet'}
-        />
+        <>
+          <ListHeaderComponent />
+          <ListEmptyComponent />
+        </>
       ) : (
-        <View style={styles.listContainer}>
-          {safeOrders.map(renderOrderItem)}
+        <View style={styles.listWrapper}>
+          <FlashList
+            data={safeOrders}
+            renderItem={renderOrderItem}
+            keyExtractor={(item, index) => item.id || `order-item-${index}`}
+            estimatedItemSize={140}
+            ListHeaderComponent={ListHeaderComponent}
+            scrollEnabled={false}
+            extraData={[colors, language, isRTL, canEditOrderStatus, updatingOrderId]}
+          />
         </View>
       )}
     </View>
@@ -236,6 +256,9 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 16,
     borderWidth: 1,
+  },
+  listWrapper: {
+    minHeight: 100,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -259,9 +282,6 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 12,
     fontWeight: '700',
-  },
-  listContainer: {
-    minHeight: 50,
   },
   orderCard: {
     paddingVertical: 12,
