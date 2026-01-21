@@ -1,4 +1,8 @@
-import React, { useEffect, useState, useRef } from 'react';
+/**
+ * Categories Screen - Optimized with React Query
+ * Displays hierarchical category tree with animations
+ */
+import React, { useState, useRef, useCallback, useMemo, memo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -17,7 +21,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Header } from '../../src/components/Header';
 import { useTheme } from '../../src/hooks/useTheme';
 import { useTranslation } from '../../src/hooks/useTranslation';
-import { categoriesApi } from '../../src/services/api';
+import { useCategoriesTreeQuery } from '../../src/hooks/queries';
 
 const { width } = Dimensions.get('window');
 
@@ -42,7 +46,7 @@ const iconMap: { [key: string]: { icon: string; gradient: string[] } } = {
   'car-side': { icon: 'car-side', gradient: ['#654EA3', '#EAAFC8'] },
 };
 
-// Sub-category icons with softer colors
+// Sub-category icons
 const subIconMap: { [key: string]: string } = {
   'filter': 'filter-outline',
   'oil': 'water-outline',
@@ -69,7 +73,8 @@ interface AnimatedCategoryProps {
   children?: React.ReactNode;
 }
 
-const AnimatedCategory: React.FC<AnimatedCategoryProps> = ({
+// Memoized AnimatedCategory component for performance
+const AnimatedCategory = memo(({
   category,
   level,
   isExpanded,
@@ -79,7 +84,7 @@ const AnimatedCategory: React.FC<AnimatedCategoryProps> = ({
   isRTL,
   getName,
   children,
-}) => {
+}: AnimatedCategoryProps) => {
   const animatedHeight = useRef(new Animated.Value(0)).current;
   const rotateAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(1)).current;
@@ -107,26 +112,23 @@ const AnimatedCategory: React.FC<AnimatedCategoryProps> = ({
   const hasChildren = category.children && category.children.length > 0;
   const iconData = iconMap[category.icon] || { icon: 'cube-outline', gradient: ['#667EEA', '#764BA2'] };
   const isMainCategory = level === 0;
-  
-  // Check if category has an uploaded image
   const hasImage = category.image_data && category.image_data.length > 0;
 
-  const handlePressIn = () => {
+  const handlePressIn = useCallback(() => {
     Animated.spring(scaleAnim, {
       toValue: 0.98,
       useNativeDriver: true,
     }).start();
-  };
+  }, [scaleAnim]);
 
-  const handlePressOut = () => {
+  const handlePressOut = useCallback(() => {
     Animated.spring(scaleAnim, {
       toValue: 1,
       useNativeDriver: true,
     }).start();
-  };
+  }, [scaleAnim]);
 
   if (isMainCategory) {
-    // Main Category - Card Style with Gradient Icon or Image
     return (
       <View style={styles.mainCategoryWrapper}>
         <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
@@ -150,7 +152,6 @@ const AnimatedCategory: React.FC<AnimatedCategoryProps> = ({
               },
             ]}
           >
-            {/* Image or Gradient Icon Container */}
             {hasImage ? (
               <View style={styles.mainImageContainer}>
                 <Image
@@ -174,7 +175,6 @@ const AnimatedCategory: React.FC<AnimatedCategoryProps> = ({
               </LinearGradient>
             )}
 
-            {/* Category Info */}
             <View style={[styles.mainCategoryInfo, isRTL && styles.mainCategoryInfoRTL]}>
               <Text style={[styles.mainCategoryName, { color: colors.text }]}>
                 {getName(category)}
@@ -186,7 +186,6 @@ const AnimatedCategory: React.FC<AnimatedCategoryProps> = ({
               )}
             </View>
 
-            {/* Actions */}
             <View style={[styles.mainCategoryActions, isRTL && styles.mainCategoryActionsRTL]}>
               {hasChildren && (
                 <Animated.View style={{ transform: [{ rotate: rotation }] }}>
@@ -213,7 +212,6 @@ const AnimatedCategory: React.FC<AnimatedCategoryProps> = ({
           </TouchableOpacity>
         </Animated.View>
 
-        {/* Children Container */}
         {hasChildren && isExpanded && (
           <View style={[styles.subCategoriesContainer, { borderLeftColor: iconData.gradient[0] }]}>
             {children}
@@ -223,7 +221,7 @@ const AnimatedCategory: React.FC<AnimatedCategoryProps> = ({
     );
   }
 
-  // Sub Category - Compact Style
+  // Sub Category
   const subIcon = subIconMap[category.icon] || 'chevron-forward-circle-outline';
   
   return (
@@ -248,7 +246,6 @@ const AnimatedCategory: React.FC<AnimatedCategoryProps> = ({
           isRTL && styles.subCategoryCardRTL,
         ]}
       >
-        {/* Sub Icon or Image */}
         <View style={[styles.subIconContainer, { backgroundColor: hasImage ? 'transparent' : colors.primary + '10' }]}>
           {hasImage ? (
             <Image
@@ -265,12 +262,10 @@ const AnimatedCategory: React.FC<AnimatedCategoryProps> = ({
           )}
         </View>
 
-        {/* Sub Category Name */}
         <Text style={[styles.subCategoryName, { color: colors.text }, isRTL && styles.textRTL]}>
           {getName(category)}
         </Text>
 
-        {/* Arrow or Expand */}
         <View style={styles.subCategoryAction}>
           {hasChildren ? (
             <Animated.View style={{ transform: [{ rotate: rotation }] }}>
@@ -288,7 +283,6 @@ const AnimatedCategory: React.FC<AnimatedCategoryProps> = ({
         </View>
       </TouchableOpacity>
 
-      {/* Nested Children */}
       {hasChildren && isExpanded && (
         <View style={styles.nestedSubContainer}>
           {children}
@@ -296,40 +290,24 @@ const AnimatedCategory: React.FC<AnimatedCategoryProps> = ({
       )}
     </Animated.View>
   );
-};
+});
 
 export default function CategoriesScreen() {
   const { colors, isDark } = useTheme();
   const { t, isRTL, language } = useTranslation();
   const router = useRouter();
 
-  const [categories, setCategories] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  // Use React Query for data fetching
+  const {
+    data: categories = [],
+    isLoading,
+    isRefetching,
+    refetch,
+  } = useCategoriesTreeQuery();
+
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
 
-  const fetchCategories = async () => {
-    try {
-      const response = await categoriesApi.getTree();
-      setCategories(response.data);
-    } catch (error) {
-      console.error('Error fetching categories:', error);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchCategories();
-  }, []);
-
-  const onRefresh = () => {
-    setRefreshing(true);
-    fetchCategories();
-  };
-
-  const toggleExpand = (categoryId: string) => {
+  const toggleExpand = useCallback((categoryId: string) => {
     setExpandedCategories((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(categoryId)) {
@@ -339,13 +317,18 @@ export default function CategoriesScreen() {
       }
       return newSet;
     });
-  };
+  }, []);
 
-  const getName = (item: any) => {
+  const getName = useCallback((item: any) => {
     return language === 'ar' && item.name_ar ? item.name_ar : item.name;
-  };
+  }, [language]);
 
-  const renderCategory = (category: any, level: number = 0): React.ReactNode => {
+  // Memoize subcategory count calculation
+  const subcategoryCount = useMemo(() => {
+    return categories.reduce((acc: number, cat: any) => acc + (cat.children?.length || 0), 0);
+  }, [categories]);
+
+  const renderCategory = useCallback((category: any, level: number = 0): React.ReactNode => {
     const hasChildren = category.children && category.children.length > 0;
     const isExpanded = expandedCategories.has(category.id);
 
@@ -364,9 +347,9 @@ export default function CategoriesScreen() {
         {hasChildren && category.children.map((child: any) => renderCategory(child, level + 1))}
       </AnimatedCategory>
     );
-  };
+  }, [expandedCategories, toggleExpand, router, colors, isRTL, getName]);
 
-  if (loading) {
+  if (isLoading) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <Header title={t('allCategories')} showBack={false} />
@@ -404,7 +387,7 @@ export default function CategoriesScreen() {
           </View>
           <View>
             <Text style={[styles.statValue, { color: colors.text }]}>
-              {categories.reduce((acc, cat) => acc + (cat.children?.length || 0), 0)}
+              {subcategoryCount}
             </Text>
             <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
               {language === 'ar' ? 'قسم فرعي' : 'Subcategories'}
@@ -419,8 +402,8 @@ export default function CategoriesScreen() {
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl 
-            refreshing={refreshing} 
-            onRefresh={onRefresh}
+            refreshing={isRefetching} 
+            onRefresh={refetch}
             colors={[colors.primary]}
             tintColor={colors.primary}
           />
@@ -434,9 +417,8 @@ export default function CategoriesScreen() {
           </Text>
         </View>
 
-        {categories.map((category) => renderCategory(category))}
+        {categories.map((category: any) => renderCategory(category))}
         
-        {/* Bottom Padding */}
         <View style={styles.bottomPadding} />
       </ScrollView>
     </View>
@@ -513,7 +495,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
   },
-  // Main Category Styles
   mainCategoryWrapper: {
     marginBottom: 12,
   },
@@ -585,7 +566,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  // Sub Categories Container
   subCategoriesContainer: {
     marginTop: 8,
     marginLeft: 28,
@@ -593,7 +573,6 @@ const styles = StyleSheet.create({
     borderLeftWidth: 3,
     borderRadius: 2,
   },
-  // Sub Category Styles
   subCategoryCard: {
     flexDirection: 'row',
     alignItems: 'center',
