@@ -37,6 +37,28 @@ async def create_car_brand(brand: CarBrandCreate):
     await manager.broadcast({"type": "sync", "tables": ["car_brands"]})
     return serialize_doc(doc)
 
+@router.put("/{brand_id}")
+async def update_car_brand(brand_id: str, brand: CarBrandCreate):
+    """Update an existing car brand"""
+    existing = await db.car_brands.find_one({"_id": brand_id, "deleted_at": None})
+    if not existing:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Car brand not found")
+    
+    update_data = {
+        **brand.dict(exclude_unset=True),
+        "updated_at": datetime.now(timezone.utc)
+    }
+    
+    await db.car_brands.update_one(
+        {"_id": brand_id},
+        {"$set": update_data}
+    )
+    
+    updated = await db.car_brands.find_one({"_id": brand_id})
+    await manager.broadcast({"type": "sync", "tables": ["car_brands"]})
+    return serialize_doc(updated)
+
 @router.delete("/{brand_id}")
 async def delete_car_brand(brand_id: str):
     await db.car_brands.update_one(
