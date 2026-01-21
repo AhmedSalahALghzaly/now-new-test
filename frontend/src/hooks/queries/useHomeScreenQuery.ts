@@ -2,8 +2,8 @@
  * Home Screen Query Hook with React Query
  * Provides data fetching for the home screen with caching and parallel loading
  */
-import { useQuery, useQueries, useQueryClient } from '@tanstack/react-query';
-import { useMemo, useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useCallback, useEffect } from 'react';
 import {
   categoriesApi,
   carBrandsApi,
@@ -12,7 +12,6 @@ import {
   productsApi,
   favoritesApi,
   promotionApi,
-  partnerApi,
 } from '../../services/api';
 import { useAppStore } from '../../store/appStore';
 
@@ -26,7 +25,6 @@ export const homeScreenKeys = {
   products: ['homeScreen', 'products'] as const,
   favorites: ['homeScreen', 'favorites'] as const,
   banners: ['homeScreen', 'banners'] as const,
-  partners: ['homeScreen', 'partners'] as const,
 };
 
 /**
@@ -39,16 +37,13 @@ export function useHomeScreenQuery() {
   const setGlobalCarModels = useAppStore((state) => state.setCarModels);
   const setGlobalProductBrands = useAppStore((state) => state.setProductBrands);
   const setGlobalProducts = useAppStore((state) => state.setProducts);
-  const setGlobalPartners = useAppStore((state) => state.setPartners);
 
   // Categories query
   const categoriesQuery = useQuery({
     queryKey: homeScreenKeys.categories,
     queryFn: async () => {
       const response = await categoriesApi.getTree();
-      const data = response.data || [];
-      setGlobalCategories(data);
-      return data;
+      return response.data || [];
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
@@ -58,9 +53,7 @@ export function useHomeScreenQuery() {
     queryKey: homeScreenKeys.carBrands,
     queryFn: async () => {
       const response = await carBrandsApi.getAll();
-      const data = response.data || [];
-      setGlobalCarBrands(data);
-      return data;
+      return response.data || [];
     },
     staleTime: 5 * 60 * 1000,
   });
@@ -70,9 +63,7 @@ export function useHomeScreenQuery() {
     queryKey: homeScreenKeys.carModels,
     queryFn: async () => {
       const response = await carModelsApi.getAll();
-      const data = response.data || [];
-      setGlobalCarModels(data);
-      return data;
+      return response.data || [];
     },
     staleTime: 5 * 60 * 1000,
   });
@@ -82,9 +73,7 @@ export function useHomeScreenQuery() {
     queryKey: homeScreenKeys.productBrands,
     queryFn: async () => {
       const response = await productBrandsApi.getAll();
-      const data = response.data || [];
-      setGlobalProductBrands(data);
-      return data;
+      return response.data || [];
     },
     staleTime: 5 * 60 * 1000,
   });
@@ -94,23 +83,9 @@ export function useHomeScreenQuery() {
     queryKey: homeScreenKeys.products,
     queryFn: async () => {
       const response = await productsApi.getAll({ limit: 100 });
-      const data = response.data?.products || [];
-      setGlobalProducts(data);
-      return data;
+      return response.data?.products || [];
     },
     staleTime: 2 * 60 * 1000, // 2 minutes for products
-  });
-
-  // Partners query
-  const partnersQuery = useQuery({
-    queryKey: homeScreenKeys.partners,
-    queryFn: async () => {
-      const response = await partnerApi.getAll();
-      const data = response.data || [];
-      setGlobalPartners(data);
-      return data;
-    },
-    staleTime: 5 * 60 * 1000,
   });
 
   // Favorites query (only when logged in)
@@ -140,6 +115,37 @@ export function useHomeScreenQuery() {
     staleTime: 2 * 60 * 1000,
   });
 
+  // Sync to global store when data changes (using useEffect instead of inside queryFn)
+  useEffect(() => {
+    if (categoriesQuery.data) {
+      setGlobalCategories(categoriesQuery.data);
+    }
+  }, [categoriesQuery.data, setGlobalCategories]);
+
+  useEffect(() => {
+    if (carBrandsQuery.data) {
+      setGlobalCarBrands(carBrandsQuery.data);
+    }
+  }, [carBrandsQuery.data, setGlobalCarBrands]);
+
+  useEffect(() => {
+    if (carModelsQuery.data) {
+      setGlobalCarModels(carModelsQuery.data);
+    }
+  }, [carModelsQuery.data, setGlobalCarModels]);
+
+  useEffect(() => {
+    if (productBrandsQuery.data) {
+      setGlobalProductBrands(productBrandsQuery.data);
+    }
+  }, [productBrandsQuery.data, setGlobalProductBrands]);
+
+  useEffect(() => {
+    if (productsQuery.data) {
+      setGlobalProducts(productsQuery.data);
+    }
+  }, [productsQuery.data, setGlobalProducts]);
+
   // Check if any essential query is loading
   const isLoading =
     categoriesQuery.isLoading ||
@@ -163,7 +169,6 @@ export function useHomeScreenQuery() {
       carModelsQuery.refetch(),
       productBrandsQuery.refetch(),
       productsQuery.refetch(),
-      partnersQuery.refetch(),
       favoritesQuery.refetch(),
       bannersQuery.refetch(),
     ]);
@@ -173,7 +178,6 @@ export function useHomeScreenQuery() {
     carModelsQuery,
     productBrandsQuery,
     productsQuery,
-    partnersQuery,
     favoritesQuery,
     bannersQuery,
   ]);
