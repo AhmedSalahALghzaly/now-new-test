@@ -157,7 +157,7 @@ const ProductFormHeader = memo(({
         </View>
 
         {/* Section 1: Basic Product Information */}
-        <View style={[styles.formSection, { borderColor: colors.border }]}>
+        <View style={[styles.formSectionInner, { borderColor: colors.border }]}>
           <Text style={[styles.sectionLabel, { color: colors.primary }]}>
             <Ionicons name="information-circle" size={14} /> {language === 'ar' ? 'المعلومات الأساسية' : 'Basic Information'}
           </Text>
