@@ -750,6 +750,9 @@ const styles = StyleSheet.create({
   backButton: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
   headerTitle: { fontSize: 24, fontWeight: '700' },
   addButton: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+  // Loading styles
+  loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  loadingText: { marginTop: 16, fontSize: 16, fontWeight: '500' },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
