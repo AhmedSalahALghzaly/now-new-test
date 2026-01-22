@@ -882,6 +882,26 @@ export default function ProductsAdmin() {
     productBrands, categories, carModels, brandMap, categoryMap, carModelMap,
   }), [productBrands, categories, carModels, brandMap, categoryMap, carModelMap]);
 
+  // Use refs to hold latest values - this keeps the callback stable while still having access to fresh data
+  const formStateRef = useRef(formState);
+  const formHandlersRef = useRef(formHandlers);
+  const lookupsRef = useRef(lookups);
+  const colorsRef = useRef(colors);
+  const languageRef = useRef(language);
+  const isRTLRef = useRef(isRTL);
+  const productsCountRef = useRef(products.length);
+  const routerRef = useRef(router);
+
+  // Update refs when values change
+  useEffect(() => { formStateRef.current = formState; }, [formState]);
+  useEffect(() => { formHandlersRef.current = formHandlers; }, [formHandlers]);
+  useEffect(() => { lookupsRef.current = lookups; }, [lookups]);
+  useEffect(() => { colorsRef.current = colors; }, [colors]);
+  useEffect(() => { languageRef.current = language; }, [language]);
+  useEffect(() => { isRTLRef.current = isRTL; }, [isRTL]);
+  useEffect(() => { productsCountRef.current = products.length; }, [products.length]);
+  useEffect(() => { routerRef.current = router; }, [router]);
+
   // Render product item
   const renderProductItem = useCallback(({ item: product }: { item: any }) => (
     <ProductItem
@@ -900,19 +920,18 @@ export default function ProductsAdmin() {
     />
   ), [colors, language, quantityInputs, updatingQuantityId, handleQuantityInputChange, handleUpdateQuantity, handleEditProduct, openDeleteConfirm]);
 
-  // Header component - uses the standalone ProductFormHeader
-  // CRITICAL: Empty dependency array to prevent re-creating the header on every state change
-  // The ProductFormHeader receives fresh props via the refs/state, but the callback itself stays stable
+  // Header component - uses refs for stable callback identity while accessing fresh values
+  // CRITICAL: This prevents FlashList from remounting the header on every keystroke
   const ListHeaderComponent = useCallback(() => (
     <ProductFormHeader
-      formState={formState}
-      handlers={formHandlers}
-      lookups={lookups}
-      colors={colors}
-      language={language}
-      isRTL={isRTL}
-      productsCount={products.length}
-      router={router}
+      formState={formStateRef.current}
+      handlers={formHandlersRef.current}
+      lookups={lookupsRef.current}
+      colors={colorsRef.current}
+      language={languageRef.current}
+      isRTL={isRTLRef.current}
+      productsCount={productsCountRef.current}
+      router={routerRef.current}
     />
   ), []);
 
