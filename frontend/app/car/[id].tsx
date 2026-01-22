@@ -276,7 +276,13 @@ export default function CarModelDetailScreen() {
         {carModel.distributor && (
           <TouchableOpacity
             style={[styles.distributorButton, { backgroundColor: colors.card, borderColor: colors.border }]}
-            onPress={() => router.push(`/owner/distributors?viewMode=profile&id=${carModel.distributor.id}`)}
+            onPress={() => {
+              if (canViewProfile) {
+                router.push(`/owner/distributors?viewMode=profile&id=${carModel.distributor.id}`);
+              } else {
+                triggerGoldenGlow();
+              }
+            }}
             activeOpacity={0.85}
           >
             <View style={styles.distributorContent}>
@@ -302,7 +308,7 @@ export default function CarModelDetailScreen() {
                 </Text>
               </View>
               <View style={[styles.distributorArrowContainer, { backgroundColor: colors.primary + '20' }]}>
-                <Ionicons name="chevron-forward" size={18} color={colors.primary} />
+                <Ionicons name={canViewProfile ? "chevron-forward" : "lock-closed"} size={18} color={colors.primary} />
               </View>
             </View>
             {/* Subscribe CTA Banner - Only for non-subscribers */}
@@ -316,11 +322,11 @@ export default function CarModelDetailScreen() {
                 >
                   <View style={styles.subscribeBannerGoldBorder} />
                   <Ionicons name="star" size={16} color="#FFD700" />
-                  <Text style={styles.subscribeBannerText}>
+                  <Animated.Text style={[styles.subscribeBannerText, glowTextStyle]}>
                     {language === 'ar' 
                       ? 'اشترك للتواصل وظهور البيانات والكتالوج' 
                       : 'Subscribe to contact & view data & catalog'}
-                  </Text>
+                  </Animated.Text>
                   <Ionicons name="star" size={16} color="#FFD700" />
                   <View style={styles.subscribeBannerGoldBorderRight} />
                 </LinearGradient>
