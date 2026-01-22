@@ -259,7 +259,7 @@ const ProductFormHeader = memo(({
         </View>
 
         {/* Section 2: Product Relationships */}
-        <View style={[styles.formSection, { borderColor: colors.border }]}>
+        <View style={[styles.formSectionInner, { borderColor: colors.border }]}>
           <Text style={[styles.sectionLabel, { color: colors.primary }]}>
             <Ionicons name="link" size={14} /> {language === 'ar' ? 'التصنيفات والعلاقات' : 'Classifications & Relations'}
           </Text>
