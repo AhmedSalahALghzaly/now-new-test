@@ -188,6 +188,7 @@ export default function DistributorsScreen() {
   const [selectedDistributor, setSelectedDistributor] = useState<Distributor | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGalleryImage, setSelectedGalleryImage] = useState(0);
+  const [isProfileLoading, setIsProfileLoading] = useState(false);
 
   // Golden Glow Animation State
   const [isGlowing, setIsGlowing] = useState(false);
