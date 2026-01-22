@@ -278,13 +278,22 @@ export default function SuppliersScreen() {
 
   // Handle URL params for direct navigation to profile
   useEffect(() => {
+    console.log('[Suppliers] useEffect triggered:', { 
+      viewModeParam: params.viewMode, 
+      idParam: params.id,
+      currentViewMode: viewMode,
+      selectedSupplierId: selectedSupplier?.id 
+    });
+    
     // Only process if we have profile params
     if (params.viewMode !== 'profile' || !params.id) {
+      console.log('[Suppliers] No profile params, skipping');
       return;
     }
     
     // Handle restricted users - trigger golden glow
     if (!canViewProfile) {
+      console.log('[Suppliers] User cannot view profile, triggering glow');
       triggerGoldenGlow();
       router.setParams({ viewMode: undefined, id: undefined });
       return;
@@ -292,8 +301,11 @@ export default function SuppliersScreen() {
     
     // Avoid re-triggering if already showing this exact profile
     if (viewMode === 'profile' && selectedSupplier?.id === params.id) {
+      console.log('[Suppliers] Already showing this profile, skipping');
       return;
     }
+    
+    console.log('[Suppliers] Loading profile for ID:', params.id);
     
     // Set loading state immediately
     setIsProfileLoading(true);
@@ -301,8 +313,11 @@ export default function SuppliersScreen() {
     // Async function to fetch and display profile
     const loadProfile = async () => {
       try {
+        console.log('[Suppliers] Fetching supplier data...');
         // Always fetch from API to ensure fresh data
         const res = await supplierApi.getById(params.id as string);
+        
+        console.log('[Suppliers] API Response:', res.data);
         
         if (res.data) {
           // CRITICAL: Set data FIRST, then switch view mode
@@ -310,11 +325,12 @@ export default function SuppliersScreen() {
           setSelectedGalleryImage(0);
           setViewMode('profile');
           setIsProfileLoading(false);
+          console.log('[Suppliers] Profile loaded successfully');
         } else {
           throw new Error('No data returned');
         }
       } catch (err) {
-        console.error('Error fetching supplier:', err);
+        console.error('[Suppliers] Error fetching supplier:', err);
         setError(isRTL ? 'فشل في تحميل بيانات المورد' : 'Failed to load supplier data');
         setIsProfileLoading(false);
         router.setParams({ viewMode: undefined, id: undefined });

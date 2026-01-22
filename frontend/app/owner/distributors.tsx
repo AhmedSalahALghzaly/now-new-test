@@ -292,13 +292,22 @@ export default function DistributorsScreen() {
 
   // Handle URL params for direct navigation to profile
   useEffect(() => {
+    console.log('[Distributors] useEffect triggered:', { 
+      viewModeParam: params.viewMode, 
+      idParam: params.id,
+      currentViewMode: viewMode,
+      selectedDistributorId: selectedDistributor?.id 
+    });
+    
     // Only process if we have profile params
     if (params.viewMode !== 'profile' || !params.id) {
+      console.log('[Distributors] No profile params, skipping');
       return;
     }
     
     // Handle restricted users - trigger golden glow
     if (!canViewProfile) {
+      console.log('[Distributors] User cannot view profile, triggering glow');
       triggerGoldenGlow();
       router.setParams({ viewMode: undefined, id: undefined });
       return;
@@ -306,8 +315,11 @@ export default function DistributorsScreen() {
     
     // Avoid re-triggering if already showing this exact profile
     if (viewMode === 'profile' && selectedDistributor?.id === params.id) {
+      console.log('[Distributors] Already showing this profile, skipping');
       return;
     }
+    
+    console.log('[Distributors] Loading profile for ID:', params.id);
     
     // Set loading state immediately
     setIsProfileLoading(true);
@@ -315,8 +327,11 @@ export default function DistributorsScreen() {
     // Async function to fetch and display profile
     const loadProfile = async () => {
       try {
+        console.log('[Distributors] Fetching distributor data...');
         // Always fetch from API to ensure fresh data
         const res = await distributorApi.getById(params.id as string);
+        
+        console.log('[Distributors] API Response:', res.data);
         
         if (res.data) {
           // CRITICAL: Set data FIRST, then switch view mode
@@ -324,11 +339,12 @@ export default function DistributorsScreen() {
           setSelectedGalleryImage(0);
           setViewMode('profile');
           setIsProfileLoading(false);
+          console.log('[Distributors] Profile loaded successfully');
         } else {
           throw new Error('No data returned');
         }
       } catch (err) {
-        console.error('Error fetching distributor:', err);
+        console.error('[Distributors] Error fetching distributor:', err);
         setError(isRTL ? 'فشل في تحميل بيانات الموزع' : 'Failed to load distributor data');
         setIsProfileLoading(false);
         router.setParams({ viewMode: undefined, id: undefined });
