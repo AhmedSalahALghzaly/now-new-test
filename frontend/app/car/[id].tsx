@@ -224,7 +224,7 @@ export default function CarModelDetailScreen() {
         {carModel.distributor && (
           <TouchableOpacity
             style={[styles.distributorButton, { backgroundColor: colors.card, borderColor: colors.border }]}
-            onPress={() => router.push(`/owner/add-entity-form?entityType=distributor&id=${carModel.distributor.id}`)}
+            onPress={() => router.push(`/owner/distributors?viewMode=profile&id=${carModel.distributor.id}`)}
             activeOpacity={0.85}
           >
             <View style={styles.distributorContent}>
