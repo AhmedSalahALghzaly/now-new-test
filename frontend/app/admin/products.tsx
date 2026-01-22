@@ -935,20 +935,6 @@ export default function ProductsAdmin() {
     />
   ), []);
 
-  // Empty component
-  const ListEmptyComponent = useCallback(() => {
-    if (loading) return <View style={styles.loadingContainer}><ActivityIndicator size="large" color={colors.primary} /></View>;
-    return (
-      <View style={styles.emptyContainer}>
-        <Ionicons name="cube-outline" size={48} color={colors.textSecondary} />
-        <Text style={[styles.emptyText, { color: colors.textSecondary }]}>{language === 'ar' ? 'لا توجد منتجات' : 'No products found'}</Text>
-      </View>
-    );
-  }, [loading, colors, language]);
-
-  // Footer component
-  const ListFooterComponent = useCallback(() => <View style={{ height: insets.bottom + 40 }} />, [insets.bottom]);
-
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['bottom']}>
       <Header title={language === 'ar' ? 'المنتجات' : 'Products'} showBack showSearch={false} showCart={false} />
