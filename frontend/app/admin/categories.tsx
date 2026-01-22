@@ -1,8 +1,8 @@
 /**
- * Categories Admin - Refactored with TanStack Query + FlashList
- * High-performance, stable architecture with optimistic updates
+ * Categories Admin - Refactored with standalone form component
+ * Fixes TextInput focus loss by extracting form outside FlashList
  */
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, memo } from 'react';
 import {
   View,
   Text,
@@ -12,11 +12,9 @@ import {
   ActivityIndicator,
   Image,
   RefreshControl,
-  KeyboardAvoidingView,
-  Platform,
+  ScrollView,
 } from 'react-native';
-import { FlashList } from '@shopify/flash-list';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -39,257 +37,59 @@ interface Category {
   image_data?: string;
 }
 
-// Memoized Category List Item Component
-const CategoryListItem = React.memo(({
-  category,
-  parentName,
-  colors,
-  onEdit,
-  onDelete,
-}: {
-  category: Category;
-  parentName: string;
+interface FormState {
+  name: string;
+  nameAr: string;
+  parentId: string | null;
+  icon: string;
+  categoryImage: string;
+  isEditMode: boolean;
+  editingCategory: Category | null;
+  searchQuery: string;
+}
+
+interface FormHandlers {
+  setName: (v: string) => void;
+  setNameAr: (v: string) => void;
+  setParentId: (v: string | null) => void;
+  setIcon: (v: string) => void;
+  setCategoryImage: (v: string) => void;
+  handleSave: () => void;
+  resetForm: () => void;
+  setSearchQuery: (v: string) => void;
+}
+
+interface FormHeaderProps {
+  formState: FormState;
+  handlers: FormHandlers;
   colors: any;
-  onEdit: (category: Category) => void;
-  onDelete: (id: string) => void;
-}) => {
-  const hasImage = category.image_data && category.image_data.length > 0;
+  language: string;
+  isRTL: boolean;
+  isSaving: boolean;
+  categoriesCount: number;
+  parentCategories: Category[];
+  router: any;
+}
+
+// ============================================================================
+// Standalone Form Header Component - OUTSIDE main component to prevent re-mounting
+// ============================================================================
+const CategoryFormHeader = memo(({
+  formState,
+  handlers,
+  colors,
+  language,
+  isRTL,
+  isSaving,
+  categoriesCount,
+  parentCategories,
+  router,
+}: FormHeaderProps) => {
+  const { name, nameAr, parentId, icon, categoryImage, isEditMode, searchQuery } = formState;
+  const { setName, setNameAr, setParentId, setIcon, setCategoryImage, handleSave, resetForm, setSearchQuery } = handlers;
+
   return (
-    <View style={[styles.listItem, { borderColor: colors.border }]}>
-      <View style={[styles.categoryIcon, { backgroundColor: hasImage ? 'transparent' : colors.primary + '20', overflow: 'hidden' }]}>
-        {hasImage ? (
-          <Image source={{ uri: category.image_data }} style={styles.categoryImage} resizeMode="cover" />
-        ) : (
-          <Ionicons name={(category.icon || 'grid') as any} size={24} color={colors.primary} />
-        )}
-      </View>
-      <View style={styles.categoryInfo}>
-        <Text style={[styles.categoryName, { color: colors.text }]}>{category.name}</Text>
-        <Text style={[styles.categoryMeta, { color: colors.textSecondary }]}>
-          {category.name_ar} {parentName ? `• ${parentName}` : ''}
-        </Text>
-      </View>
-      <View style={styles.actionButtons}>
-        <TouchableOpacity
-          style={[styles.editButton, { backgroundColor: colors.primary + '20' }]}
-          onPress={() => onEdit(category)}
-        >
-          <Ionicons name="create" size={18} color={colors.primary} />
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.deleteButton, { backgroundColor: colors.error + '20' }]}
-          onPress={() => onDelete(category.id)}
-        >
-          <Ionicons name="trash" size={18} color={colors.error} />
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-});
-
-export default function CategoriesAdmin() {
-  const { colors } = useTheme();
-  const { language, isRTL } = useTranslation();
-  const router = useRouter();
-  const queryClient = useQueryClient();
-  const adminSync = useAdminSync();
-
-  // Form state
-  const [name, setName] = useState('');
-  const [nameAr, setNameAr] = useState('');
-  const [parentId, setParentId] = useState<string | null>(null);
-  const [icon, setIcon] = useState('');
-  const [categoryImage, setCategoryImage] = useState<string>('');
-
-  // Edit mode state
-  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
-  const [isEditMode, setIsEditMode] = useState(false);
-
-  // Search state
-  const [searchQuery, setSearchQuery] = useState('');
-
-  // Toast state
-  const [toastVisible, setToastVisible] = useState(false);
-  const [toastMessage, setToastMessage] = useState('');
-  const [toastType, setToastType] = useState<'success' | 'error' | 'warning' | 'info'>('success');
-
-  // TanStack Query: Fetch Categories
-  const {
-    data: categoriesData,
-    isLoading,
-    isRefetching,
-    refetch,
-  } = useQuery({
-    queryKey: queryKeys.categories.all,
-    queryFn: async () => {
-      const response = await categoriesApi.getAll();
-      return response.data || [];
-    },
-    staleTime: 2 * 60 * 1000,
-  });
-
-  const categories: Category[] = categoriesData || [];
-
-  // Parent categories (those without parent_id)
-  const parentCategories = useMemo(() => 
-    categories.filter(c => !c.parent_id),
-  [categories]);
-
-  // Pre-compute parent name map
-  const parentNameMap = useMemo(() => {
-    const map: Record<string, { name: string; name_ar: string }> = {};
-    categories.forEach(cat => {
-      map[cat.id] = { name: cat.name, name_ar: cat.name_ar };
-    });
-    return map;
-  }, [categories]);
-
-  const getParentName = useCallback((parentId: string | null | undefined) => {
-    if (!parentId) return '';
-    const parent = parentNameMap[parentId];
-    return parent ? (language === 'ar' ? parent.name_ar : parent.name) : '';
-  }, [parentNameMap, language]);
-
-  // Filter categories based on search query
-  const filteredCategories = useMemo(() => {
-    if (!searchQuery.trim()) return categories;
-    const query = searchQuery.toLowerCase();
-    return categories.filter((category) => {
-      const catName = (category.name || '').toLowerCase();
-      const catNameAr = (category.name_ar || '').toLowerCase();
-      return catName.includes(query) || catNameAr.includes(query);
-    });
-  }, [categories, searchQuery]);
-
-  // Create Mutation
-  const createMutation = useMutation({
-    mutationFn: async (data: any) => {
-      return adminSync.createCategory(data);
-    },
-    onSuccess: (result) => {
-      if (result.success) {
-        queryClient.invalidateQueries({ queryKey: queryKeys.categories.all });
-        showToast(language === 'ar' ? 'تم حفظ الفئة بنجاح' : 'Category saved successfully', 'success');
-        resetForm();
-      } else {
-        showToast(result.error || 'Error saving category', 'error');
-      }
-    },
-    onError: (error: any) => {
-      showToast(error.message || 'Error saving category', 'error');
-    },
-  });
-
-  // Update Mutation
-  const updateMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: any }) => {
-      return adminSync.updateCategory(id, data);
-    },
-    onSuccess: (result) => {
-      if (result.success) {
-        queryClient.invalidateQueries({ queryKey: queryKeys.categories.all });
-        showToast(language === 'ar' ? 'تم تحديث الفئة بنجاح' : 'Category updated successfully', 'success');
-        resetForm();
-      } else {
-        showToast(result.error || 'Failed to update category', 'error');
-      }
-    },
-    onError: (error: any) => {
-      showToast(error.message || 'Failed to update category', 'error');
-    },
-  });
-
-  // Delete Mutation with Optimistic Update
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      return adminSync.deleteCategory(id);
-    },
-    onMutate: async (deletedId) => {
-      await queryClient.cancelQueries({ queryKey: queryKeys.categories.all });
-      const previousCategories = queryClient.getQueryData(queryKeys.categories.all);
-
-      queryClient.setQueryData(queryKeys.categories.all, (old: Category[] | undefined) =>
-        old ? old.filter(c => c.id !== deletedId) : []
-      );
-
-      return { previousCategories };
-    },
-    onSuccess: (result) => {
-      if (result.success) {
-        showToast(language === 'ar' ? 'تم حذف الفئة بنجاح' : 'Category deleted successfully', 'success');
-      } else {
-        showToast(result.error || 'Failed to delete category', 'error');
-        queryClient.invalidateQueries({ queryKey: queryKeys.categories.all });
-      }
-    },
-    onError: (error, variables, context) => {
-      if (context?.previousCategories) {
-        queryClient.setQueryData(queryKeys.categories.all, context.previousCategories);
-      }
-      showToast(language === 'ar' ? 'فشل في حذف الفئة' : 'Failed to delete category', 'error');
-    },
-  });
-
-  const showToast = useCallback((message: string, type: 'success' | 'error' | 'warning' | 'info' = 'success') => {
-    setToastMessage(message);
-    setToastType(type);
-    setToastVisible(true);
-  }, []);
-
-  const resetForm = useCallback(() => {
-    setName('');
-    setNameAr('');
-    setParentId(null);
-    setIcon('');
-    setCategoryImage('');
-    setIsEditMode(false);
-    setEditingCategory(null);
-  }, []);
-
-  const handleEditCategory = useCallback((category: Category) => {
-    setName(category.name || '');
-    setNameAr(category.name_ar || '');
-    setParentId(category.parent_id || null);
-    setIcon(category.icon || '');
-    setCategoryImage(category.image_data || '');
-    setEditingCategory(category);
-    setIsEditMode(true);
-  }, []);
-
-  const handleSave = useCallback(async () => {
-    if (!name.trim() || !nameAr.trim()) {
-      showToast(language === 'ar' ? 'يرجى ملء جميع الحقول المطلوبة' : 'Please fill all required fields', 'error');
-      return;
-    }
-
-    const categoryData = {
-      name: name.trim(),
-      name_ar: nameAr.trim(),
-      parent_id: parentId,
-      icon: icon.trim() || null,
-      image_data: categoryImage || null,
-    };
-
-    if (isEditMode && editingCategory) {
-      updateMutation.mutate({ id: editingCategory.id, data: categoryData });
-    } else {
-      createMutation.mutate(categoryData);
-    }
-  }, [name, nameAr, parentId, icon, categoryImage, isEditMode, editingCategory, language, showToast, createMutation, updateMutation]);
-
-  const handleDelete = useCallback((id: string) => {
-    deleteMutation.mutate(id);
-  }, [deleteMutation]);
-
-  const onRefresh = useCallback(() => {
-    refetch();
-  }, [refetch]);
-
-  const isSaving = createMutation.isPending || updateMutation.isPending;
-
-  // List Header Component
-  const ListHeaderComponent = useCallback(() => (
-    <View>
+    <View style={styles.listHeaderContainer}>
       {/* Breadcrumb */}
       <View style={[styles.breadcrumb, isRTL && styles.breadcrumbRTL]}>
         <TouchableOpacity onPress={() => router.push('/admin')}>
@@ -435,7 +235,7 @@ export default function CategoriesAdmin() {
       {/* List Header */}
       <View style={[styles.listCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <Text style={[styles.listTitle, { color: colors.text }]}>
-          {language === 'ar' ? 'الفئات الحالية' : 'Existing Categories'} ({filteredCategories.length})
+          {language === 'ar' ? 'الفئات الحالية' : 'Existing Categories'} ({categoriesCount})
         </Text>
 
         {/* Search Bar */}
@@ -456,76 +256,307 @@ export default function CategoriesAdmin() {
         </View>
       </View>
     </View>
-  ), [isRTL, colors, language, isEditMode, parentId, parentCategories, name, nameAr, icon, categoryImage, isSaving, filteredCategories.length, searchQuery, router, resetForm, handleSave]);
+  );
+});
 
-  // Empty component
-  const ListEmptyComponent = useCallback(() => (
-    <View style={styles.emptyContainer}>
-      {isLoading ? (
-        <ActivityIndicator size="large" color={colors.primary} />
-      ) : (
-        <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
-          {searchQuery ? (language === 'ar' ? 'لا توجد نتائج' : 'No results found') : (language === 'ar' ? 'لا توجد فئات' : 'No categories found')}
+CategoryFormHeader.displayName = 'CategoryFormHeader';
+
+// ============================================================================
+// Memoized Category List Item Component
+// ============================================================================
+const CategoryListItem = memo(({
+  category,
+  parentName,
+  colors,
+  onEdit,
+  onDelete,
+}: {
+  category: Category;
+  parentName: string;
+  colors: any;
+  onEdit: (category: Category) => void;
+  onDelete: (id: string) => void;
+}) => {
+  const hasImage = category.image_data && category.image_data.length > 0;
+  return (
+    <View style={[styles.listItem, { borderColor: colors.border }]}>
+      <View style={[styles.categoryIcon, { backgroundColor: hasImage ? 'transparent' : colors.primary + '20', overflow: 'hidden' }]}>
+        {hasImage ? (
+          <Image source={{ uri: category.image_data }} style={styles.categoryImage} resizeMode="cover" />
+        ) : (
+          <Ionicons name={(category.icon || 'grid') as any} size={24} color={colors.primary} />
+        )}
+      </View>
+      <View style={styles.categoryInfo}>
+        <Text style={[styles.categoryName, { color: colors.text }]}>{category.name}</Text>
+        <Text style={[styles.categoryMeta, { color: colors.textSecondary }]}>
+          {category.name_ar} {parentName ? `• ${parentName}` : ''}
         </Text>
-      )}
+      </View>
+      <View style={styles.actionButtons}>
+        <TouchableOpacity
+          style={[styles.editButton, { backgroundColor: colors.primary + '20' }]}
+          onPress={() => onEdit(category)}
+        >
+          <Ionicons name="create" size={18} color={colors.primary} />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.deleteButton, { backgroundColor: colors.error + '20' }]}
+          onPress={() => onDelete(category.id)}
+        >
+          <Ionicons name="trash" size={18} color={colors.error} />
+        </TouchableOpacity>
+      </View>
     </View>
-  ), [isLoading, colors, searchQuery, language]);
+  );
+});
 
-  // Render item
-  const renderItem = useCallback(({ item }: { item: Category }) => (
-    <CategoryListItem
-      category={item}
-      parentName={getParentName(item.parent_id)}
-      colors={colors}
-      onEdit={handleEditCategory}
-      onDelete={handleDelete}
-    />
-  ), [colors, getParentName, handleEditCategory, handleDelete]);
+CategoryListItem.displayName = 'CategoryListItem';
 
-  const keyExtractor = useCallback((item: Category) => item.id, []);
+// ============================================================================
+// Main Component
+// ============================================================================
+export default function CategoriesAdmin() {
+  const { colors } = useTheme();
+  const { language, isRTL } = useTranslation();
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const adminSync = useAdminSync();
+  const insets = useSafeAreaInsets();
+
+  // Form state
+  const [name, setName] = useState('');
+  const [nameAr, setNameAr] = useState('');
+  const [parentId, setParentId] = useState<string | null>(null);
+  const [icon, setIcon] = useState('');
+  const [categoryImage, setCategoryImage] = useState<string>('');
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Toast state
+  const [toastVisible, setToastVisible] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState<'success' | 'error' | 'warning' | 'info'>('success');
+
+  // TanStack Query: Fetch Categories
+  const {
+    data: categoriesData,
+    isLoading,
+    isRefetching,
+    refetch,
+  } = useQuery({
+    queryKey: queryKeys.categories.all,
+    queryFn: async () => {
+      const response = await categoriesApi.getAll();
+      return response.data || [];
+    },
+    staleTime: 2 * 60 * 1000,
+  });
+
+  const categories: Category[] = categoriesData || [];
+
+  // Parent categories (those without parent_id)
+  const parentCategories = useMemo(() => 
+    categories.filter(c => !c.parent_id),
+  [categories]);
+
+  // Pre-compute parent name map
+  const parentNameMap = useMemo(() => {
+    const map: Record<string, { name: string; name_ar: string }> = {};
+    categories.forEach(cat => {
+      map[cat.id] = { name: cat.name, name_ar: cat.name_ar };
+    });
+    return map;
+  }, [categories]);
+
+  const getParentName = useCallback((pId: string | null | undefined) => {
+    if (!pId) return '';
+    const parent = parentNameMap[pId];
+    return parent ? (language === 'ar' ? parent.name_ar : parent.name) : '';
+  }, [parentNameMap, language]);
+
+  // Filter categories based on search query
+  const filteredCategories = useMemo(() => {
+    if (!searchQuery.trim()) return categories;
+    const query = searchQuery.toLowerCase();
+    return categories.filter((category) => {
+      const catName = (category.name || '').toLowerCase();
+      const catNameAr = (category.name_ar || '').toLowerCase();
+      return catName.includes(query) || catNameAr.includes(query);
+    });
+  }, [categories, searchQuery]);
+
+  // Mutations
+  const createMutation = useMutation({
+    mutationFn: async (data: any) => adminSync.createCategory(data),
+    onSuccess: (result) => {
+      if (result.success) {
+        queryClient.invalidateQueries({ queryKey: queryKeys.categories.all });
+        showToast(language === 'ar' ? 'تم حفظ الفئة بنجاح' : 'Category saved successfully', 'success');
+        resetForm();
+      } else {
+        showToast(result.error || 'Error saving category', 'error');
+      }
+    },
+    onError: (error: any) => showToast(error.message || 'Error saving category', 'error'),
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => adminSync.updateCategory(id, data),
+    onSuccess: (result) => {
+      if (result.success) {
+        queryClient.invalidateQueries({ queryKey: queryKeys.categories.all });
+        showToast(language === 'ar' ? 'تم تحديث الفئة بنجاح' : 'Category updated successfully', 'success');
+        resetForm();
+      } else {
+        showToast(result.error || 'Failed to update category', 'error');
+      }
+    },
+    onError: (error: any) => showToast(error.message || 'Failed to update category', 'error'),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => adminSync.deleteCategory(id),
+    onMutate: async (deletedId) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.categories.all });
+      const previousCategories = queryClient.getQueryData(queryKeys.categories.all);
+      queryClient.setQueryData(queryKeys.categories.all, (old: Category[] | undefined) =>
+        old ? old.filter(c => c.id !== deletedId) : []
+      );
+      return { previousCategories };
+    },
+    onSuccess: (result) => {
+      if (result.success) {
+        showToast(language === 'ar' ? 'تم حذف الفئة بنجاح' : 'Category deleted successfully', 'success');
+      } else {
+        showToast(result.error || 'Failed to delete category', 'error');
+        queryClient.invalidateQueries({ queryKey: queryKeys.categories.all });
+      }
+    },
+    onError: (error, variables, context) => {
+      if (context?.previousCategories) queryClient.setQueryData(queryKeys.categories.all, context.previousCategories);
+      showToast(language === 'ar' ? 'فشل في حذف الفئة' : 'Failed to delete category', 'error');
+    },
+  });
+
+  const showToast = useCallback((message: string, type: 'success' | 'error' | 'warning' | 'info' = 'success') => {
+    setToastMessage(message);
+    setToastType(type);
+    setToastVisible(true);
+  }, []);
+
+  const resetForm = useCallback(() => {
+    setName(''); setNameAr(''); setParentId(null); setIcon('');
+    setCategoryImage(''); setIsEditMode(false); setEditingCategory(null);
+  }, []);
+
+  const handleEditCategory = useCallback((category: Category) => {
+    setName(category.name || ''); setNameAr(category.name_ar || '');
+    setParentId(category.parent_id || null); setIcon(category.icon || '');
+    setCategoryImage(category.image_data || ''); setEditingCategory(category); setIsEditMode(true);
+  }, []);
+
+  const handleSave = useCallback(async () => {
+    if (!name.trim() || !nameAr.trim()) {
+      showToast(language === 'ar' ? 'يرجى ملء جميع الحقول المطلوبة' : 'Please fill all required fields', 'error');
+      return;
+    }
+    const categoryData = {
+      name: name.trim(), name_ar: nameAr.trim(), parent_id: parentId,
+      icon: icon.trim() || null, image_data: categoryImage || null,
+    };
+    if (isEditMode && editingCategory) updateMutation.mutate({ id: editingCategory.id, data: categoryData });
+    else createMutation.mutate(categoryData);
+  }, [name, nameAr, parentId, icon, categoryImage, isEditMode, editingCategory, language, showToast, createMutation, updateMutation]);
+
+  const handleDelete = useCallback((id: string) => deleteMutation.mutate(id), [deleteMutation]);
+
+  const isSaving = createMutation.isPending || updateMutation.isPending;
+
+  // Form state object
+  const formState: FormState = useMemo(() => ({
+    name, nameAr, parentId, icon, categoryImage, isEditMode, editingCategory, searchQuery,
+  }), [name, nameAr, parentId, icon, categoryImage, isEditMode, editingCategory, searchQuery]);
+
+  // Form handlers object
+  const formHandlers: FormHandlers = useMemo(() => ({
+    setName, setNameAr, setParentId, setIcon, setCategoryImage, handleSave, resetForm, setSearchQuery,
+  }), [handleSave, resetForm]);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['bottom']}>
       <Header title={language === 'ar' ? 'الفئات' : 'Categories'} showBack showSearch={false} showCart={false} />
 
-      <KeyboardAvoidingView 
-        style={styles.keyboardView}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      <ScrollView
+        style={styles.mainScrollView}
+        contentContainerStyle={styles.mainScrollContent}
+        showsVerticalScrollIndicator={true}
+        keyboardShouldPersistTaps="handled"
+        nestedScrollEnabled={true}
+        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.primary} />}
       >
-        <FlashList
-          data={filteredCategories}
-          renderItem={renderItem}
-          keyExtractor={keyExtractor}
-          estimatedItemSize={80}
-          ListHeaderComponent={ListHeaderComponent}
-          ListEmptyComponent={ListEmptyComponent}
-          contentContainerStyle={styles.listContentContainer}
-          refreshControl={
-            <RefreshControl
-              refreshing={isRefetching}
-              onRefresh={onRefresh}
-              colors={[colors.primary]}
-              tintColor={colors.primary}
-            />
-          }
-          extraData={[colors, language, searchQuery]}
-        />
-      </KeyboardAvoidingView>
+        {/* Form Section - OUTSIDE list to prevent focus loss */}
+        <View style={styles.formSection}>
+          <CategoryFormHeader
+            formState={formState}
+            handlers={formHandlers}
+            colors={colors}
+            language={language}
+            isRTL={isRTL}
+            isSaving={isSaving}
+            categoriesCount={filteredCategories.length}
+            parentCategories={parentCategories}
+            router={router}
+          />
+        </View>
+
+        {/* Categories List Section - Using map() since form is outside */}
+        <View style={styles.categoriesListContainer}>
+          {isLoading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={colors.primary} />
+            </View>
+          ) : filteredCategories.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <Ionicons name="grid-outline" size={48} color={colors.textSecondary} />
+              <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
+                {searchQuery ? (language === 'ar' ? 'لا توجد نتائج' : 'No results found') : (language === 'ar' ? 'لا توجد فئات' : 'No categories found')}
+              </Text>
+            </View>
+          ) : (
+            <View>
+              {filteredCategories.map((category: Category) => (
+                <CategoryListItem
+                  key={category.id}
+                  category={category}
+                  parentName={getParentName(category.parent_id)}
+                  colors={colors}
+                  onEdit={handleEditCategory}
+                  onDelete={handleDelete}
+                />
+              ))}
+            </View>
+          )}
+        </View>
+        
+        <View style={{ height: insets.bottom + 40 }} />
+      </ScrollView>
       
-      <Toast
-        visible={toastVisible}
-        message={toastMessage}
-        type={toastType}
-        onDismiss={() => setToastVisible(false)}
-      />
+      <Toast visible={toastVisible} message={toastMessage} type={toastType} onDismiss={() => setToastVisible(false)} />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  keyboardView: { flex: 1 },
-  listContentContainer: { padding: 16 },
+  mainScrollView: { flex: 1 },
+  mainScrollContent: { paddingHorizontal: 16 },
+  formSection: { paddingTop: 16 },
+  categoriesListContainer: { flex: 1 },
+  loadingContainer: { padding: 40, alignItems: 'center' },
+  emptyContainer: { padding: 40, alignItems: 'center' },
+  listHeaderContainer: {},
   breadcrumb: { flexDirection: 'row', alignItems: 'center', marginBottom: 16, gap: 8 },
   breadcrumbRTL: { flexDirection: 'row-reverse' },
   breadcrumbText: { fontSize: 14 },
@@ -542,25 +573,11 @@ const styles = StyleSheet.create({
   parentChip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, borderWidth: 1 },
   saveButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 14, borderRadius: 8, gap: 8 },
   saveButtonText: { color: '#FFF', fontSize: 16, fontWeight: '600' },
-  listCard: { borderRadius: 12, borderWidth: 1, padding: 16 },
+  listCard: { borderRadius: 12, borderWidth: 1, padding: 16, marginBottom: 8 },
   listTitle: { fontSize: 18, fontWeight: '700', marginBottom: 16 },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    marginBottom: 16,
-    gap: 10,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 15,
-    paddingVertical: 0,
-  },
-  emptyContainer: { alignItems: 'center', padding: 40 },
-  emptyText: { textAlign: 'center', fontSize: 15 },
+  searchContainer: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10, gap: 10 },
+  searchInput: { flex: 1, fontSize: 15, paddingVertical: 0 },
+  emptyText: { textAlign: 'center', marginTop: 12, fontSize: 15 },
   listItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 16, borderBottomWidth: 1 },
   categoryIcon: { width: 52, height: 52, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   categoryImage: { width: 52, height: 52, borderRadius: 12 },
