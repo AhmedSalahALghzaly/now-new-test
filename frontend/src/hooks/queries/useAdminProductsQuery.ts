@@ -70,7 +70,11 @@ export function useAdminProductsQuery() {
   return useQuery({
     queryKey: adminProductsKeys.list,
     queryFn: async () => {
+      console.log('[useAdminProductsQuery] Fetching products...');
       const response = await productsApi.getAllAdmin();
+      console.log('[useAdminProductsQuery] Response:', response);
+      console.log('[useAdminProductsQuery] Response.data:', response.data);
+      console.log('[useAdminProductsQuery] Products count:', response.data?.products?.length || 0);
       return response.data?.products || [];
     },
     staleTime: 2 * 60 * 1000,
