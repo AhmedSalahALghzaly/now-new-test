@@ -885,17 +885,16 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Cart & Favorites - Larger cards with car models badge"
-    - "List spacing fixes - no gaps at top"
-    - "Admin Products FlashList scrolling"
-    - "Real-time mutations using React Query"
+    - "Admin Products Panel - Focus Loss Fix (Standalone Component)"
+    - "Admin Products Panel - FlashList Scrolling"
+    - "Admin Products Panel - Product List Rendering"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
 
 agent_communication:
   - agent: "main"
-    message: "FOUR CRITICAL FIXES: 1) CartTab.tsx & FavoritesTab.tsx - Enhanced car models display to check multiple sources (compatible_car_models, car_models, car_model_ids), increased card size to minHeight 140px, image size to 100x100. 2) Removed excess padding causing top gap - changed sectionHeader to simple headerRow with no paddingTop. 3) Admin Products FlashList - verified structure is correct. 4) useCartOperations & useFavoriteOperations - Now use React Query mutations (useCartMutations, useFavoritesMutations) with optimistic updates for instant UI feedback."
+    message: "CRITICAL ADMIN PANEL FIX - COMPLETE REFACTOR: 1) Extracted ProductFormHeader into a STANDALONE memo component defined OUTSIDE the main component to prevent re-mounting on state changes (fixes TextInput focus loss). 2) All form state and handlers passed as props through formState, handlers, and lookups objects. 3) FlashList properly configured with estimatedItemSize={240}, drawDistance={500} for better scrolling. 4) Products list uses React Query (useAdminProductsQuery) with optimistic updates. 5) Maintained all existing ProductItem details (Brand, Category, Models, SKU, Price, Stock Management). Files: admin/products.tsx completely refactored."
   - agent: "main"
     message: "Phase 1 Technical Fixes implemented: (1) orders.filter safety check in owner/index.tsx Quick Stats, (2) Removed conflicting pulseAnim from customers.tsx - OrderStatusIndicator uses internal reanimated animation, (3) ProductCard now uses expo-image with transparent background, (4) GlassCard and index.tsx now have BlurView integration for frosted glass effect"
   - agent: "testing"
