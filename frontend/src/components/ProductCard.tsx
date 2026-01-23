@@ -285,6 +285,15 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
         ) : (
           <Ionicons name="cube-outline" size={48} color={colors.textSecondary} />
         )}
+        
+        {/* Golden Gift Icon for Bundle Products */}
+        {isInBundle && (
+          <View style={styles.bundleIconContainer}>
+            <View style={styles.bundleIconBadge}>
+              <Ionicons name="gift" size={14} color="#FFD700" />
+            </View>
+          </View>
+        )}
       </View>
       
       <View style={styles.content}>
