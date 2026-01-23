@@ -190,30 +190,40 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
   const handleAddToCart = useCallback(async () => {
     if (!onAddToCart) return;
     
-    // Check if product already exists in cart as bundle item
-    if (checkBundleDuplicate(product.id)) {
+    // BIDIRECTIONAL: Check if product already exists in cart at all (bundle OR normal)
+    if (checkDuplicate(product.id)) {
+      // Trigger shake animation on cart button
+      if (cartButtonRef.current) {
+        cartButtonRef.current.triggerShake();
+      }
+      
       // Haptic feedback for warning
       if (Platform.OS !== 'web') {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
       }
+      
       Alert.alert(
         language === 'ar' ? 'تنبيه' : 'Notice',
         'عرض المنتج تم اضافته بالفعل',
         [{ text: language === 'ar' ? 'حسناً' : 'OK', style: 'default' }],
         { cancelable: true }
       );
+      
+      // Do NOT set addedToCart to true - keep showing 'add' icon
       return;
     }
     
+    // Success path - product is not a duplicate
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
     
     setCartLoading(true);
-    setAddedToCart(true);
     
     try {
       await onAddToCart(quantity);
+      // Only set addedToCart to true after successful addition
+      setAddedToCart(true);
       setTimeout(() => setAddedToCart(false), 1500);
     } catch (error) {
       console.error('Error adding to cart:', error);
@@ -221,7 +231,7 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
     } finally {
       setCartLoading(false);
     }
-  }, [onAddToCart, quantity, checkBundleDuplicate, product.id, language]);
+  }, [onAddToCart, quantity, checkDuplicate, product.id, language]);
 
   const handleIncreaseQuantity = useCallback(() => {
     if (Platform.OS !== 'web') {
