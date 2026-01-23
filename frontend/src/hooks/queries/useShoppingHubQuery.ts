@@ -186,7 +186,9 @@ export function useShoppingHubQuery(enabled = true) {
 
 /**
  * Hook for cart mutations (add, update, remove)
- * ENHANCED: Bundle duplicate prevention with professional Arabic alerts
+ * ENHANCED: Bidirectional duplicate prevention - prevents adding duplicates in BOTH directions:
+ *   1. Prevent adding a product as Normal Item if it exists in cart as Bundle Item
+ *   2. Prevent adding a product to Bundle if it exists in cart as Normal Item
  * FIXED: Enhanced cache invalidation for immediate UI updates
  */
 export function useCartMutations() {
@@ -194,21 +196,29 @@ export function useCartMutations() {
   const language = useAppStore((state) => state.language);
 
   /**
-   * Check if product already exists in cart as a bundle item
+   * BIDIRECTIONAL: Check if product already exists in cart AT ALL
+   * This prevents duplicates regardless of whether the item is in a bundle or standalone
+   * @param productId - The product ID to check
+   * @returns true if product exists in cart (as bundle OR normal item)
    */
-  const checkBundleDuplicate = (productId: string): boolean => {
+  const checkDuplicate = (productId: string): boolean => {
     const cartData = queryClient.getQueryData<any[]>(shoppingHubKeys.cart);
     if (!cartData) return false;
     
-    return cartData.some(item => 
-      item.product_id === productId && item.bundle_group_id
-    );
+    // Check if product exists in cart at all - regardless of bundle_group_id
+    return cartData.some(item => item.product_id === productId);
   };
 
   /**
-   * Show professional alert for bundle duplicate
+   * Legacy alias for backward compatibility
+   * @deprecated Use checkDuplicate instead
    */
-  const showBundleDuplicateAlert = () => {
+  const checkBundleDuplicate = checkDuplicate;
+
+  /**
+   * Show professional alert for duplicate product
+   */
+  const showDuplicateAlert = () => {
     if (Platform.OS !== 'web') {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
     }
@@ -226,12 +236,18 @@ export function useCartMutations() {
     );
   };
 
+  /**
+   * Legacy alias for backward compatibility
+   * @deprecated Use showDuplicateAlert instead
+   */
+  const showBundleDuplicateAlert = showDuplicateAlert;
+
   const addToCart = useMutation({
     mutationFn: async (productId: string) => {
-      // Check for bundle duplicate BEFORE making API call
-      if (checkBundleDuplicate(productId)) {
-        showBundleDuplicateAlert();
-        throw new Error('BUNDLE_DUPLICATE');
+      // BIDIRECTIONAL: Check for duplicate BEFORE making API call
+      if (checkDuplicate(productId)) {
+        showDuplicateAlert();
+        throw new Error('DUPLICATE_PRODUCT');
       }
       return cartApi.add(productId);
     },
