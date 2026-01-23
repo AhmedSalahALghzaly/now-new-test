@@ -25,6 +25,8 @@ import { useAppStore } from '../../src/store/appStore';
 import { productsApi, cartApi, commentsApi, favoritesApi } from '../../src/services/api';
 import { AnimatedFavoriteButton, AnimatedCartButton } from '../../src/components/AnimatedIconButton';
 import { useBundleProducts } from '../../src/hooks/queries/useBundleProducts';
+import { useCartMutations, shoppingHubKeys } from '../../src/hooks/queries/useShoppingHubQuery';
+import { useQueryClient } from '@tanstack/react-query';
 import Animated, { 
   useSharedValue, 
   useAnimatedStyle, 
