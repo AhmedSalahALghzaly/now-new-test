@@ -24,6 +24,7 @@ import { useTranslation } from '../../src/hooks/useTranslation';
 import { useAppStore } from '../../src/store/appStore';
 import { productsApi, cartApi, commentsApi, favoritesApi } from '../../src/services/api';
 import { AnimatedFavoriteButton, AnimatedCartButton } from '../../src/components/AnimatedIconButton';
+import { useBundleProducts } from '../../src/hooks/queries/useBundleProducts';
 import Animated, { 
   useSharedValue, 
   useAnimatedStyle, 
