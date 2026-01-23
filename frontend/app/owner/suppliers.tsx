@@ -57,12 +57,16 @@ interface Supplier {
   id: string;
   name: string;
   name_ar?: string;
+  // Backend uses phone_numbers array, but we also handle legacy 'phone' field
   phone?: string;
+  phone_numbers?: string[];
   address?: string;
   address_ar?: string;
   description?: string;
   description_ar?: string;
+  // Backend uses website_url, but we also handle legacy 'website' field
   website?: string;
+  website_url?: string;
   contact_email?: string;
   profile_image?: string;
   images?: string[];
