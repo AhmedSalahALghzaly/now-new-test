@@ -351,7 +351,8 @@ export function useCartMutations() {
     updateQuantity,
     removeFromCart,
     clearCart,
-    checkBundleDuplicate,
+    checkDuplicate,
+    checkBundleDuplicate, // Legacy alias for backward compatibility
   };
 }
 
