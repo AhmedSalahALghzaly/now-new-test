@@ -33,6 +33,8 @@ import { useTheme } from '../../src/hooks/useTheme';
 import { useTranslation } from '../../src/hooks/useTranslation';
 import { useAppStore } from '../../src/store/appStore';
 import { carModelsApi, cartApi } from '../../src/services/api';
+import { useCartMutations, shoppingHubKeys } from '../../src/hooks/queries/useShoppingHubQuery';
+import { useQueryClient } from '@tanstack/react-query';
 
 const GOLD_COLOR = '#FFD700';
 
