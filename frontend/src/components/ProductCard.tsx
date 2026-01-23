@@ -448,6 +448,7 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
           {/* Animated Add to Cart Button - Right */}
           {onAddToCart && (
             <AnimatedCartButton
+              ref={cartButtonRef}
               isInCart={addedToCart}
               isLoading={cartLoading}
               onPress={handleAddToCart}
