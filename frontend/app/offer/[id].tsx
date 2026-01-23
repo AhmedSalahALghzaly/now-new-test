@@ -240,7 +240,7 @@ export default function OfferDetailsScreen() {
     return language === 'ar' && offer.description_ar ? offer.description_ar : offer.description;
   };
 
-  const handleAddToCart = async (product: any) => {
+  const handleAddToCart = useCallback(async (product: any) => {
     if (!user) {
       router.push('/login');
       return;
@@ -248,6 +248,12 @@ export default function OfferDetailsScreen() {
 
     // BIDIRECTIONAL: Check if product already exists in cart (as bundle OR normal item)
     if (checkDuplicate(product.id)) {
+      // Trigger shake animation on cart button
+      const buttonRef = cartButtonRefs.current.get(product.id);
+      if (buttonRef) {
+        buttonRef.triggerShake();
+      }
+      
       // Haptic feedback for warning
       if (Platform.OS !== 'web') {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
@@ -261,17 +267,14 @@ export default function OfferDetailsScreen() {
       return;
     }
 
-    // Animate cart icon
-    Animated.sequence([
-      Animated.timing(cartIconAnim, { toValue: 1.25, duration: 120, useNativeDriver: true }),
-      Animated.timing(cartIconAnim, { toValue: 1, duration: 120, useNativeDriver: true }),
-    ]).start();
-
     setAddingToCart(true);
     try {
-      // إضافة منتج واحد مع معلومات الخصم
+      // إضافة منتج واحد مع معلومات الخصم كعرض خاص (bundle_group_id)
       const originalPrice = product.price || 0;
       const discountedPrice = originalPrice * (1 - discount / 100);
+      
+      // Generate a unique bundle_group_id for this single product from the offer
+      const bundleGroupId = `${offer?.id}_${product.id}_${Date.now()}`;
       
       addToCart({
         productId: product.id,
@@ -282,11 +285,13 @@ export default function OfferDetailsScreen() {
         bundleDiscount: discount,
         originalPrice: originalPrice,
         discountedPrice: discountedPrice,
+        bundleGroupId: bundleGroupId, // This marks it as a special offer item
       });
       
       await cartApi.add(product.id, 1, {
         bundle_offer_id: offer?.id,
         bundle_discount_percentage: discount,
+        bundle_group_id: bundleGroupId, // Send to API to mark as bundle item
       });
       
       // Invalidate cart query for real-time sync
@@ -296,14 +301,14 @@ export default function OfferDetailsScreen() {
       
       // Success feedback
       if (Platform.OS !== 'web') {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       }
     } catch (error) {
       console.error('Error adding to cart:', error);
     } finally {
       setAddingToCart(false);
     }
-  };
+  }, [user, router, checkDuplicate, language, offer, discount, addToCart, queryClient]);
 
   /**
    * Bug Fix #1: استخدام addBundleToCart لإضافة كل منتجات العرض المجمع
