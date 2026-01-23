@@ -249,6 +249,7 @@ export default function AddEntityFormScreen() {
         name: formData.name,
         name_ar: formData.name_ar || null,
         phone_numbers: formData.phone_numbers,
+        contact_email: formData.contact_email || null,
         address: formData.address || null,
         address_ar: formData.address_ar || null,
         description: formData.description || null,
